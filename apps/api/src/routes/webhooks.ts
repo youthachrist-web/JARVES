@@ -11,6 +11,7 @@ import {
 import type { AppConfig } from '../config.js'
 import type { CredentialsStore } from '../store/credentialsStore.js'
 import type { EventLogStore } from '../store/eventLogStore.js'
+import type { Mailer } from '../lib/mailer.js'
 import { requireRawBody } from '../middlewares/rawBody.js'
 import { logger } from '../logger.js'
 
@@ -19,6 +20,7 @@ export interface WebhooksRouterDeps {
   credentialsStore: CredentialsStore
   eventLog: EventLogStore
   idempotencyStore: IdempotencyStore
+  mailer: Mailer
 }
 
 /**
@@ -29,12 +31,16 @@ export interface WebhooksRouterDeps {
  * interno; a falha fica visível no log de eventos do painel admin.
  */
 async function processEvent(payload: NuvemshopWebhookPayload, deps: WebhooksRouterDeps): Promise<void> {
-  const { eventLog, credentialsStore } = deps
+  const { eventLog, credentialsStore, mailer } = deps
   try {
     switch (payload.event) {
       case 'app/uninstalled': {
         await credentialsStore.clear()
         await eventLog.record({ level: 'warn', category: 'webhook', message: 'App desinstalado pelo lojista — credenciais removidas', detail: { storeId: payload.store_id } })
+        await mailer.send(
+          'App Nuvemshop desinstalado',
+          `A loja ${payload.store_id} desinstalou o app Thymos. As credenciais salvas foram removidas automaticamente.`
+        )
         break
       }
       case 'store/redact':
@@ -55,12 +61,19 @@ async function processEvent(payload: NuvemshopWebhookPayload, deps: WebhooksRout
         })
         break
       }
+      case 'order/paid': {
+        await eventLog.record({ level: 'info', category: 'webhook', message: `Pedido pago: #${payload.id}`, detail: { id: payload.id } })
+        await mailer.send(
+          `Novo pedido pago — #${payload.id}`,
+          `Um pedido foi pago na loja ${payload.store_id} (pedido #${payload.id}). Confira os detalhes no painel administrativo da Nuvemshop.`
+        )
+        break
+      }
       case 'product/created':
       case 'product/updated':
       case 'product/deleted':
       case 'order/created':
       case 'order/updated':
-      case 'order/paid':
       case 'order/cancelled':
       case 'customer/created':
       case 'customer/updated': {

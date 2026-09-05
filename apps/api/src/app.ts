@@ -11,11 +11,14 @@ import { nuvemshopRouter } from './routes/nuvemshop.js'
 import { webhooksRouter } from './routes/webhooks.js'
 import { captureRawBody } from './middlewares/rawBody.js'
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js'
+import type { Mailer } from './lib/mailer.js'
+import { createMailer } from './lib/mailer.js'
 import { logger } from './logger.js'
 
 export interface CreateAppDeps {
   credentialsStore?: CredentialsStore
   eventLog?: EventLogStore
+  mailer?: Mailer
 }
 
 function corsMiddleware(allowedOrigins: string[]) {
@@ -46,6 +49,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
 
   const eventLog = deps.eventLog ?? new InMemoryEventLogStore()
   const idempotencyStore = new InMemoryIdempotencyStore()
+  const mailer = deps.mailer ?? createMailer(config.smtp)
 
   app.disable('x-powered-by')
   app.use(corsMiddleware(config.corsAllowedOrigins))
@@ -56,7 +60,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   // reparseado) — por isso é aplicado globalmente, antes de qualquer rota.
   app.use(captureRawBody)
 
-  app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore }))
+  app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore, mailer }))
   app.use('/', healthRouter(config))
   app.use('/nuvemshop', nuvemshopRouter({ config, credentialsStore, eventLog }))
 
@@ -66,6 +70,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   logger.info('Aplicação Express inicializada', {
     nuvemshopConfigured: !!config.nuvemshop,
     supabaseConfigured: !!config.supabaseUrl,
+    smtpConfigured: !!config.smtp,
   })
 
   return app

@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import request from 'supertest'
 import { createHmac } from 'node:crypto'
 import { createApp } from '../src/app.js'
 import type { AppConfig } from '../src/config.js'
 import { InMemoryCredentialsStore } from '../src/store/credentialsStore.js'
 import { InMemoryEventLogStore } from '../src/store/eventLogStore.js'
+import type { Mailer } from '../src/lib/mailer.js'
 
 const APP_SECRET = 'test-secret'
 
@@ -16,6 +17,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     supabaseUrl: null,
     supabaseAnonKey: null,
     supabaseServiceRoleKey: null,
+    smtp: null,
     nuvemshop: {
       appId: '32653',
       appSecret: APP_SECRET,
@@ -164,6 +166,32 @@ describe('POST /webhooks/nuvemshop — validação de assinatura', () => {
     // processamento é assíncrono (fire-and-forget) — aguarda o próximo tick
     await new Promise((r) => setTimeout(r, 20))
     expect(await credentialsStore.load()).toBeNull()
+  })
+
+  it('notifica por e-mail (mailer) quando o app é desinstalado', async () => {
+    const send = vi.fn().mockResolvedValue(undefined)
+    const mailer: Mailer = { send }
+    const app = createApp(baseConfig(), { mailer })
+
+    const { raw, signature } = sign({ store_id: 1, event: 'app/uninstalled' })
+    await request(app).post('/webhooks/nuvemshop').set('x-linkedstore-hmac-sha256', signature).set('Content-Type', 'application/json').send(raw)
+
+    await new Promise((r) => setTimeout(r, 20))
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][0]).toMatch(/desinstalado/i)
+  })
+
+  it('notifica por e-mail (mailer) quando um pedido é pago', async () => {
+    const send = vi.fn().mockResolvedValue(undefined)
+    const mailer: Mailer = { send }
+    const app = createApp(baseConfig(), { mailer })
+
+    const { raw, signature } = sign({ store_id: 1, event: 'order/paid', id: 42 })
+    await request(app).post('/webhooks/nuvemshop').set('x-linkedstore-hmac-sha256', signature).set('Content-Type', 'application/json').send(raw)
+
+    await new Promise((r) => setTimeout(r, 20))
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][0]).toMatch(/42/)
   })
 
   it('responde 503 quando o app secret não está configurado (credencial pendente do proprietário)', async () => {

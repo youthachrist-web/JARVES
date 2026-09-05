@@ -1,6 +1,16 @@
 import { loadNuvemshopEnv, type NuvemshopEnvConfig } from '@thymos/nuvemshop-sdk'
 import { logger } from './logger.js'
 
+export interface SmtpConfig {
+  host: string
+  port: number
+  secure: boolean
+  user: string
+  pass: string
+  /** Endereço que recebe as notificações (ex.: pedido pago, app desinstalado). */
+  notifyTo: string
+}
+
 export interface AppConfig {
   port: number
   corsAllowedOrigins: string[]
@@ -9,6 +19,7 @@ export interface AppConfig {
   supabaseAnonKey: string | null
   supabaseServiceRoleKey: string | null
   nuvemshop: NuvemshopEnvConfig | null
+  smtp: SmtpConfig | null
 }
 
 /**
@@ -31,6 +42,22 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     )
   }
 
+  let smtp: SmtpConfig | null = null
+  if (env.SMTP_USER && env.SMTP_PASS) {
+    smtp = {
+      host: env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(env.SMTP_PORT || 465),
+      secure: (env.SMTP_SECURE ?? 'true') !== 'false',
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+      notifyTo: env.SMTP_NOTIFY_TO || env.SMTP_USER,
+    }
+  } else {
+    logger.warn(
+      'SMTP não configurado (SMTP_USER/SMTP_PASS ausentes) — notificações por e-mail (pedido pago, app desinstalado) ficam desativadas até serem configuradas.'
+    )
+  }
+
   return {
     port: Number(env.PORT || 3000),
     corsAllowedOrigins: (env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173')
@@ -42,5 +69,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     supabaseAnonKey,
     supabaseServiceRoleKey,
     nuvemshop,
+    smtp,
   }
 }
