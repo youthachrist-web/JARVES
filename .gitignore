@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Env files — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build output
+dist/
+build/
+.vite/
+.next/
+out/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test/coverage
+coverage/
+.nyc_output/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Vercel / Railway local
+.vercel
+.railway
+
+# Replit artifacts (not part of this project's runtime)
+.replit
+.replitignore
+.agents/
+.upm/
+
+# Misc caches
+.cache/
+.eslintcache
