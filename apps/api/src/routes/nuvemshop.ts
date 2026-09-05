@@ -95,23 +95,33 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       res.json({ connected: false, configured: false, reason: 'Credenciais do app Nuvemshop não configuradas' })
       return
     }
-    const client = await getClient()
-    if (!client) {
-      res.json({ connected: false, configured: true })
-      return
-    }
+    // Tudo a partir daqui envolve I/O externo (credentialsStore pode ser o
+    // Supabase, client.store.get() chama a API da Nuvemshop) — qualquer falha
+    // aqui precisa degradar para connected:false, nunca derrubar o processo
+    // (Express 4 não captura rejeições assíncronas automaticamente: um erro
+    // não tratado numa rota async vira unhandledRejection e derruba a API).
     try {
+      const client = await getClient()
+      if (!client) {
+        res.json({ connected: false, configured: true })
+        return
+      }
       const store = await client.store.get()
       res.json({ connected: true, configured: true, storeId: store.id, storeName: store.name?.pt || store.name?.en })
     } catch (err) {
+      logger.error('Falha ao verificar status da conexão Nuvemshop', { message: (err as Error).message })
       res.json({ connected: false, configured: true, error: (err as Error).message })
     }
   })
 
-  router.post('/disconnect', adminAuth, async (_req, res) => {
-    await credentialsStore.clear()
-    await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja desconectada manualmente' })
-    res.json({ success: true })
+  router.post('/disconnect', adminAuth, async (_req, res, next) => {
+    try {
+      await credentialsStore.clear()
+      await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja desconectada manualmente' })
+      res.json({ success: true })
+    } catch (err) {
+      next(err)
+    }
   })
 
   // ── Sincronização ──────────────────────────────────────────────────────

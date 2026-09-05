@@ -64,6 +64,23 @@ describe('GET /nuvemshop/status', () => {
     const res = await request(app).get('/nuvemshop/status')
     expect(res.body).toEqual({ connected: false, configured: false, reason: expect.any(String) })
   })
+
+  it('degrada para connected:false (sem derrubar o processo) quando o credentialsStore falha', async () => {
+    // Regressão: um erro no credentialsStore.load() (ex.: tabela ausente no
+    // Supabase) não pode virar uma rejeição de Promise não tratada — isso
+    // derrubava o processo Node inteiro em produção (Express 4 não captura
+    // erros assíncronos automaticamente).
+    const credentialsStore: InMemoryCredentialsStore = new InMemoryCredentialsStore()
+    credentialsStore.load = async () => {
+      throw new Error('relation "configuracoes" does not exist')
+    }
+    const app = createApp(baseConfig(), { credentialsStore })
+    const res = await request(app).get('/nuvemshop/status')
+    expect(res.status).toBe(200)
+    expect(res.body.connected).toBe(false)
+    expect(res.body.configured).toBe(true)
+    expect(res.body.error).toMatch(/configuracoes/)
+  })
 })
 
 describe('GET /nuvemshop/callback', () => {
