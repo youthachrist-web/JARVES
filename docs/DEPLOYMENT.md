@@ -2,12 +2,34 @@
 
 Cada app do monorepo é independente e pode ser deployado separadamente.
 
+## Status atual (Railway)
+
+O projeto **thymos-ecommerce** já foi criado na Railway com os dois serviços
+configurados (build/start command, variáveis de ambiente e domínio público
+já definidos):
+
+| Serviço | Domínio | Build | Start |
+|---|---|---|---|
+| `api` | `api-production-c13f.up.railway.app` | `npm run build --workspace apps/api` | `node apps/api/dist/index.js` |
+| `admin` | `admin-production-31e1.up.railway.app` | `npm run build --workspace apps/admin` | `npx --yes serve@14 -s apps/admin/dist -l $PORT` |
+
+Ambos apontam para o branch `claude/ecommerce-nuvemshop-integration-wppk2d`
+do repositório `youthachrist-web/JARVES`. As variáveis de ambiente
+(`NUVEMSHOP_APP_ID`, `NUVEMSHOP_APP_SECRET`, `NUVEMSHOP_REDIRECT_URI`,
+`SESSION_SECRET`, `CORS_ALLOWED_ORIGINS`, `NODE_ENV`, `VITE_API_BASE_URL`)
+já foram configuradas diretamente na Railway — nunca neste repositório.
+
+**Pendência**: o disparo do primeiro deploy de cada serviço exige uma sessão
+autenticada real no painel da Railway (a API de automação não tem essa
+permissão por design, só configuração) — acesse
+`railway.app/project/943631b2-26e1-4d75-8a9d-f074436daba8` e clique em
+**Deploy** em cada serviço (`api`, depois `admin`). Depois do primeiro
+deploy manual, pushes futuros no branch conectado devem re-deployar
+automaticamente.
+
 ## apps/api (Node/Express)
 
 Qualquer host Node funciona (Railway, Render, Fly.io, um VPS com PM2...).
-Este projeto foi desenvolvido pensando em **Railway** (já disponível como
-integração neste ambiente de desenvolvimento) ou **Vercel** (funções
-serverless), mas não depende de nenhum dos dois especificamente.
 
 ```bash
 cd apps/api
@@ -30,8 +52,9 @@ Nuvemshop (ver `docs/NUVEMSHOP_SETUP.md`).
 
 ## apps/admin (painel administrativo)
 
-Build estático — qualquer CDN/host de site estático funciona (Vercel,
-Netlify, Cloudflare Pages).
+Build estático servido por `serve` — qualquer host Node funciona igual ao
+da API (ver tabela acima). Alternativamente, qualquer CDN de site estático
+(Vercel, Netlify, Cloudflare Pages) também serve `apps/admin/dist` direto.
 
 ```bash
 cd apps/admin
@@ -43,11 +66,6 @@ Variável de build: `VITE_API_BASE_URL` deve apontar para a URL pública de
 `apps/api` já deployada. Após o primeiro acesso, o operador confirma/ajusta
 isso e cola a chave de admin em **Configurações** dentro do próprio painel
 (fica salvo só no navegador dele).
-
-O painel não expõe nenhuma rota pública sensível — ainda assim, recomenda-se
-protegê-lo atrás de autenticação básica do provedor de hosting ou de uma
-VPN/allowlist de IP, já que ele não tem login próprio nesta versão (ver
-pendências em `apps/admin/README.md`).
 
 ## apps/storefront (loja pública)
 
@@ -75,6 +93,6 @@ funcionar.
 ## CI/CD
 
 `.github/workflows/ci.yml` roda lint + typecheck + testes + build em todo
-PR e push para `main`. Não há deploy automático configurado — cada
-ambiente de produção deve ser conectado manualmente ao provedor de hosting
-escolhido (decisão do proprietário do projeto, não inferível pelo código).
+PR e push para `main`. Não há deploy automático configurado no GitHub
+Actions — o deploy de produção usa a integração git nativa da Railway
+(descrita acima).
