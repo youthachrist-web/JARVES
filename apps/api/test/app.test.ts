@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import request from 'supertest'
 import { createHmac } from 'node:crypto'
 import { createApp } from '../src/app.js'

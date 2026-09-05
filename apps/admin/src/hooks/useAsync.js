@@ -16,8 +16,7 @@ export function useAsync(fn, deps = []) {
     } catch (err) {
       setState({ loading: false, error: err, data: null })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, deps) // deps é passado pelo chamador de propósito, como em useEffect
 
   useEffect(() => {
     run()

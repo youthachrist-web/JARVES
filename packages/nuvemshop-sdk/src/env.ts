@@ -38,7 +38,6 @@ export function loadNuvemshopEnv(
 
   if (missing.length > 0) {
     if (opts.allowMissing) {
-      // eslint-disable-next-line no-console
       console.warn(
         `[nuvemshop-sdk] AVISO: rodando sem ${missing.join(', ')}. ` +
           'Funcionalidades que dependem da Nuvemshop ficarão indisponíveis até a configuração ser concluída pelo proprietário do app.'

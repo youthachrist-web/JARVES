@@ -26,7 +26,7 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
-  } catch (networkErr) {
+  } catch {
     throw new ApiError(
       `Não foi possível conectar à API (${apiBaseUrl}). Verifique se apps/api está rodando e a URL está correta em Configurações.`,
       0,
