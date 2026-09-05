@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "npm ci",
+  "builds": [{ "src": "apps/api/api/index.ts", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "apps/api/api/index.ts" }]
+}
