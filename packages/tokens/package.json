@@ -1,0 +1,23 @@
+{
+  "name": "@thymos/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens da marca Thymos — fonte única de verdade para cores, tipografia, spacing, radius, shadows e breakpoints",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./css": "./css/tokens.css",
+    "./colors.json": "./colors.json",
+    "./typography.json": "./typography.json",
+    "./spacing.json": "./spacing.json",
+    "./radius.json": "./radius.json",
+    "./shadows.json": "./shadows.json",
+    "./breakpoints.json": "./breakpoints.json"
+  },
+  "files": [
+    "index.js",
+    "*.json",
+    "css/"
+  ]
+}

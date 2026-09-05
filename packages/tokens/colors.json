@@ -1,0 +1,48 @@
+{
+  "$schema": "Fonte: Manual da marca Thymos (2025)",
+  "brand": {
+    "primary": {
+      "forest": { "value": "#324d3e", "label": "Verde floresta — cor principal da marca, fundo de logo/embalagens" },
+      "sage": { "value": "#728a6e", "label": "Verde sálvia — acento secundário, superfícies de destaque" },
+      "mist": { "value": "#d9e4d7", "label": "Verde-claro/creme — fundos claros, contraste com o forest" }
+    },
+    "secondary": {
+      "walnut": { "value": "#5c3d2e", "label": "Marrom — acento quente, elementos de couro/madeira" },
+      "sand": { "value": "#c4a882", "label": "Areia/dourado — destaques, badges premium" },
+      "moss": { "value": "#8ea48b", "label": "Verde musgo — estados neutros, ícones" },
+      "linen": { "value": "#e2ddd4", "label": "Linho/bege — fundos neutros, cards" }
+    },
+    "cream": { "value": "#f5f2ea", "label": "Creme do wordmark sobre fundo escuro (aprox. papel/algodão cru)" }
+  },
+  "neutral": {
+    "white": { "value": "#ffffff" },
+    "black": { "value": "#141a16", "label": "Preto quente, nunca #000 puro" },
+    "gray-100": { "value": "#f4f5f3" },
+    "gray-200": { "value": "#e6e8e3" },
+    "gray-300": { "value": "#cdd1c8" },
+    "gray-400": { "value": "#a4aa9d" },
+    "gray-500": { "value": "#767d71" },
+    "gray-600": { "value": "#565d52" },
+    "gray-700": { "value": "#3a3f36" },
+    "gray-800": { "value": "#252923" }
+  },
+  "semantic": {
+    "background": { "value": "{neutral.white}", "label": "Fundo padrão do storefront" },
+    "background-inverse": { "value": "{brand.primary.forest}" },
+    "surface": { "value": "{neutral.gray-100}" },
+    "surface-inverse": { "value": "#26382e", "label": "Superfície escura secundária (levemente mais clara que forest)" },
+    "text-primary": { "value": "{neutral.black}" },
+    "text-secondary": { "value": "{neutral.gray-600}" },
+    "text-on-dark": { "value": "{brand.cream}" },
+    "text-muted": { "value": "{neutral.gray-500}" },
+    "border": { "value": "{neutral.gray-200}" },
+    "border-strong": { "value": "{neutral.gray-300}" },
+    "accent": { "value": "{brand.primary.sage}" },
+    "accent-strong": { "value": "{brand.primary.forest}" },
+    "focus-ring": { "value": "{brand.secondary.sand}" },
+    "success": { "value": "#3a8c5c" },
+    "warning": { "value": "#b8863a" },
+    "danger": { "value": "#b8453a" },
+    "info": { "value": "{brand.primary.sage}" }
+  }
+}
