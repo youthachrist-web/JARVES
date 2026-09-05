@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Thymos — Activewear Premium Brasileiro</title>
+  <meta name="description" content="Thymos: activewear premium e tecnologia sustentável para quem faz da performance seu dia a dia — no esporte, no trabalho e na vida. Frete grátis acima de R$299."/>
+  <link rel="canonical" href="https://www.thymos.com.br/"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="theme-color" content="#324d3e"/>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="Thymos"/>
+  <meta property="og:title" content="Thymos — Activewear Premium Brasileiro"/>
+  <meta property="og:description" content="Para quem faz da performance seu dia a dia. Activewear premium e tecnologia sustentável, feita no Brasil."/>
+  <meta property="og:image" content="assets/products/conjunto-sculpt-graphite.jpeg"/>
+  <meta property="og:locale" content="pt_BR"/>
+  <meta property="og:url" content="https://www.thymos.com.br/"/>
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="Thymos — Activewear Premium Brasileiro"/>
+  <meta name="twitter:description" content="Para quem faz da performance seu dia a dia."/>
+  <meta name="twitter:image" content="assets/products/conjunto-sculpt-graphite.jpeg"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Comfortaa:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <!-- Preload da imagem do hero (LCP) — evita atraso de descoberta tardia do <img> -->
+  <link rel="preload" as="image" href="assets/products/conjunto-sculpt-graphite.jpeg" fetchpriority="high"/>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ClothingStore",
+    "name": "Thymos",
+    "description": "Activewear premium e tecnologia sustentável, feita no Brasil desde 2019.",
+    "url": "https://www.thymos.com.br/",
+    "logo": "https://www.thymos.com.br/assets/thymos-logo.png",
+    "sameAs": [],
+    "areaServed": "BR"
+  }
+  </script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+  POPUP DE BOAS-VINDAS
+  ✅ Como mudar a imagem do popup:
+     Dentro de .wb-img, adicione: <img src="imagens/popup.jpg" alt="Promoção">
+═══════════════════════════════════════════ -->
+<div class="welcome-overlay" id="welcome-overlay">
+  <div class="welcome-box">
+    <button class="wb-close" id="wb-close">✕</button>
+
+    <!-- IMAGEM LADO ESQUERDO -->
+    <div class="wb-img">
+      <!-- ✅ SUBSTITUA por: <img src="imagens/popup-promo.jpg" alt="Nova Coleção"> -->
+      <div class="wb-img-overlay"></div>
+      <div class="wb-img-text">
+        <p>NOVA<br/>COLEÇÃO<br/>2025</p>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO LADO DIREITO -->
+    <div class="wb-content">
+      <div class="wb-tag">Oferta exclusiva · Só hoje</div>
+      <h2 class="wb-title">10% OFF<br/>na <em>primeira</em><br/>compra</h2>
+      <p class="wb-subtitle">Cadastre seu e-mail e ganhe desconto imediato na sua primeira compra. Válido para toda a coleção verão 2025.</p>
+      <div class="wb-code-box">
+        <span>Seu cupão de desconto</span>
+        <strong>THYMOS10</strong>
+      </div>
+      <form class="wb-form" onsubmit="handleWbForm(event)">
+        <input type="email" class="wb-input" placeholder="seu@email.com.br" required/>
+        <button type="submit" class="wb-btn">→</button>
+      </form>
+      <p class="wb-skip" onclick="closeWelcome()">Não, obrigada</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  NAVBAR
+  ✅ Logo: wordmark "thymos" já aplicado via CSS (.logo-wordmark, fonte Comfortaa)
+     (navbar escura → usa logo branca)
+     (navbar clara  → usa logo escura)
+═══════════════════════════════════════════ -->
+<nav class="navbar on-hero" id="navbar">
+  <div class="nav-inner">
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="logo" aria-label="Thymos — página inicial">
+      <span class="logo-wordmark">thymos</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#hero">Início</a></li>
+      <li><a href="#products">Loja</a></li>
+      <li><a href="#collection">Coleções</a></li>
+      <li><a href="#about">Sobre</a></li>
+      <li><a href="#footer">Contato</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-icon" id="cart-btn" aria-label="Carrinho">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <ul>
+      <li><a href="index.html">Início</a></li>
+      <li><a href="#products">Loja</a></li>
+      <li><a href="#collection">Coleções</a></li>
+      <li><a href="#about">Sobre</a></li>
+      <li><a href="#footer">Contato</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+  HERO — IMAGEM FULLSCREEN
+  ✅ Como adicionar imagem de fundo:
+     Dentro de .hero-bg, adicione:
+     <img src="imagens/hero/banner.jpg" alt="Thymos Hero">
+═══════════════════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg">
+    <img src="assets/products/conjunto-sculpt-graphite.jpeg" alt="Thymos — activewear em movimento" fetchpriority="high"/>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-side-text">THYMOS — SS 2025</div>
+  <div class="hero-content">
+    <div class="hero-eyebrow fade-up">COLEÇÃO VERÃO 2025</div>
+    <h1 class="hero-h1 fade-up">FEITO PARA<br/>PERFORMANCE<br/><em>TODO DIA.</em></h1>
+    <p class="hero-desc fade-up">Para quem faz da performance seu dia a dia — no esporte, no trabalho e na vida.</p>
+    <div class="hero-cta fade-up">
+      <a href="#products" class="btn-nude">Comprar Agora</a>
+      <a href="#collection" class="btn-ghost-white">Ver Coleção</a>
+    </div>
+    <div class="hero-stats fade-up">
+      <div class="stat"><span class="stat-n">12K+</span><span class="stat-l">Atletas</span></div>
+      <div class="stat-sep"></div>
+      <div class="stat"><span class="stat-n">4.9★</span><span class="stat-l">Avaliação</span></div>
+      <div class="stat-sep"></div>
+      <div class="stat"><span class="stat-n">50+</span><span class="stat-l">Modelos</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>Rolar</span>
+    <div class="scroll-bar"></div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span>FRETE GRÁTIS ACIMA DE R$299</span><span class="ticker-dot">✦</span>
+    <span>NOVA COLEÇÃO VERÃO 2025</span><span class="ticker-dot">✦</span>
+    <span>ACTIVEWEAR PREMIUM PARA QUEM PERFORMA</span><span class="ticker-dot">✦</span>
+    <span>TROCA GRÁTIS EM ATÉ 30 DIAS</span><span class="ticker-dot">✦</span>
+    <span>FRETE GRÁTIS ACIMA DE R$299</span><span class="ticker-dot">✦</span>
+    <span>NOVA COLEÇÃO VERÃO 2025</span><span class="ticker-dot">✦</span>
+    <span>ACTIVEWEAR PREMIUM PARA QUEM PERFORMA</span><span class="ticker-dot">✦</span>
+    <span>TROCA GRÁTIS EM ATÉ 30 DIAS</span><span class="ticker-dot">✦</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  SPLIT — FOTO + TEXTO  (estilo Lululemon)
+  ✅ Imagem: substitua .split-photo-ph por <img src="imagens/split/lifestyle-1.jpg">
+═══════════════════════════════════════════ -->
+<div class="split reveal">
+  <div class="split-photo">
+    <img src="assets/products/conjunto-sculpt-graphite-2.jpeg" alt="Conjunto Sculpt Graphite — Thymos" loading="lazy" decoding="async"/>
+  </div>
+  <div class="split-info">
+    <div class="split-tag">Nova Linha</div>
+    <h2 class="split-h">Conjunto Sculpt <br/><em>Graphite</em></h2>
+    <p class="split-p">O Conjunto Sculpt Graphite une sofisticação, conforto e performance em um design minimalista e elegante. Desenvolvido com tecido Aerobic de 84% poliamida e 16% elastano, proporciona toque macio, respirabilidade, elasticidade e liberdade de movimento com caimento impecável para acompanhar sua rotina com máximo conforto.</p>
+    <a href="#products" class="btn-link">Explorar a linha →</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  CATEGORIAS
+  ✅ Imagens: substitua cada .cat-photo div por <img src="imagens/categorias/xxx.jpg">
+═══════════════════════════════════════════ -->
+<section class="categories" id="categories">
+  <div class="sec-header reveal">
+    <span class="sec-tag">COMPRE POR CATEGORIA</span>
+    <h2>Encontre Sua<br/><em>Peça Favorita</em></h2>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-card tall reveal" data-delay="0">
+      <div class="cat-photo cp-leggings">
+        <img src="assets/products/thymos-leggings.jpeg" alt="Leggings" loading="lazy" decoding="async"/>
+      </div>
+      <div class="cat-info"><h3>Leggings</h3><span>24 Modelos →</span></div>
+    </div>
+    <div class="cat-card reveal" data-delay="100">
+      <div class="cat-photo cp-bras">
+        <img src="assets/products/top-esportivo.jpeg" alt="Top Esportivo" loading="lazy" decoding="async"/>
+        
+      </div>
+      <div class="cat-info"><h3>Top Esportivo</h3><span>18 Modelos →</span></div>
+    </div>
+    <div class="cat-card reveal" data-delay="150">
+      <div class="cat-photo cp-tees">
+          <img src="assets/products/tshirt-airflow-neon-1.jpeg" alt="T-shirt Airflow Neon" loading="lazy" decoding="async"/>
+       
+      </div>
+      <div class="cat-info"><h3>T-shirt Airflow Neon</h3><span>12 Modelos →</span></div>
+    </div>
+    <div class="cat-card reveal" data-delay="200">
+      <div class="cat-photo cp-shorts">
+          <img src="assets/products/conjunto-sculpt-shorts-graphite.jpeg" alt="Shorts" loading="lazy" decoding="async"/>
+       
+      </div>
+      <div class="cat-info"><h3>Shorts</h3><span>9 Modelos →</span></div>
+    </div>
+    <div class="cat-card reveal" data-delay="250">
+      <div class="cat-photo cp-acc">
+
+      </div>
+      <div class="cat-info"><h3>Acessórios</h3><span>15 Itens →</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  PRODUTOS
+═══════════════════════════════════════════ -->
+<section class="products" id="products">
+  <div class="sec-header reveal">
+    <span class="sec-tag">MAIS VENDIDOS</span>
+    <h2>Os Queridinhos<br/><em>da Temporada</em></h2>
+  </div>
+  <div class="prod-grid" id="products-grid"></div>
+  <div class="prods-cta reveal">
+    <button id="toggle-products-btn" class="btn-outline" aria-expanded="false" onclick="toggleProducts()">
+      Ver Todos os Produtos ↓
+    </button>
+    <p class="prods-hint" id="products-hint"></p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  LIFESTYLE BANNER FULLWIDTH
+  ✅ Imagem: dentro de .lifestyle-bg adicione <img src="imagens/lifestyle/banner.jpg">
+═══════════════════════════════════════════ -->
+<section class="lifestyle">
+  <div class="lifestyle-bg">
+    <img src="assets/products/conjunto-sculpt-graphite-2.jpeg" alt="Lifestyle Thymos" loading="lazy"/>
+  </div>
+  <div class="lifestyle-overlay"></div>
+  <div class="lifestyle-content reveal">
+    <div class="lifestyle-tag">Nossa Filosofia</div>
+    <h2 class="lifestyle-h">Performance<br/>é o seu<br/><em>padrão.</em></h2>
+    <p class="lifestyle-p">A Thymos nasceu para quem se move com intenção. Cada peça foi criada para apoiar seu momento mais forte.</p>
+    <div class="lifestyle-btns">
+      <a href="#about" class="btn-white">Nossa História</a>
+      <a href="#products" class="btn-ghost-white">Ver Coleção</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  SPLIT REVERSO — FOTO DIREITA
+  ✅ <img src="imagens/split/lifestyle-onyx.jpg" alt="Coleção Onyx">
+═══════════════════════════════════════════ -->
+<div class="split flip reveal">
+  <div class="split-photo">
+    <!-- ✅ <img src="imagens/split/colecao-onyx.jpg" alt="Coleção Onyx"> -->
+    <div class="split-photo-ph" style="background:linear-gradient(145deg,#bcc8d0,#acb8c4,#9cacbc);min-height:600px"></div>
+  </div>
+  <div class="split-info">
+    <div class="split-tag">Exclusivo Verão</div>
+    <h2 class="split-h">Coleção<br/><em>Onyx</em></h2>
+    <p class="split-p">Preto absoluto, tecido de alto desempenho e corte que define a silhueta com precisão. Para quem entra numa sala e a energia muda.</p>
+    <a href="#products" class="btn-link">Ver a coleção →</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  GALERIA TRIO — estilo Alo Yoga
+  ✅ Imagens: substitua cada .trio-photo-fill por <img src="imagens/trio/xxx.jpg">
+═══════════════════════════════════════════ -->
+<div class="trio-gallery">
+  <div class="trio-item reveal" data-delay="0">
+    <div class="trio-photo">
+      <!-- ✅ <img src="imagens/trio/look-1.jpg" alt="Look 1"> -->
+      <div class="trio-photo-fill" style="background:linear-gradient(145deg,#d4c4b0,#c0ae98,#b09880);aspect-ratio:3/4"></div>
+    </div>
+    <div class="trio-caption"><h4>Linha Sculpt</h4><span>Leggings & Tops</span></div>
+  </div>
+  <div class="trio-item reveal" data-delay="100">
+    <div class="trio-photo">
+      <!-- ✅ <img src="imagens/trio/look-2.jpg" alt="Look 2"> -->
+      <div class="trio-photo-fill" style="background:linear-gradient(145deg,#c8bdb5,#b5a8a0,#a09490);aspect-ratio:3/4"></div>
+    </div>
+    <div class="trio-caption"><h4>Coleção Onyx</h4><span>Edição Limitada</span></div>
+  </div>
+  <div class="trio-item reveal" data-delay="200">
+    <div class="trio-photo">
+      <!-- ✅ <img src="imagens/trio/look-3.jpg" alt="Look 3"> -->
+      <div class="trio-photo-fill" style="background:linear-gradient(145deg,#c0cad4,#acb8c4,#96a8bc);aspect-ratio:3/4"></div>
+    </div>
+    <div class="trio-caption"><h4>Lifestyle</h4><span>Do treino à rua</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  COLEÇÃO BANNER
+  ✅ <img src="imagens/colecao/onyx-banner.jpg"> dentro de .coll-bg
+═══════════════════════════════════════════ -->
+<section class="collection" id="collection">
+  <div class="coll-bg">
+    <!-- ✅ <img src="imagens/colecao/onyx-banner.jpg" alt="Coleção Onyx"> -->
+    <div class="coll-bg-fill"></div>
+  </div>
+  <div class="coll-grid-line"></div>
+  <div class="coll-overlay"></div>
+  <div class="coll-content reveal">
+    <span class="sec-tag" style="color:var(--nude-light)">LANÇAMENTO EXCLUSIVO</span>
+    <h2 class="coll-h">A COLEÇÃO<br/><em>ONYX</em></h2>
+    <p>Esculpida para a força. Mergulhada na escuridão.<br/>Nossa temporada mais poderosa até agora.</p>
+    <div class="coll-btns">
+      <a href="#products" class="btn-nude">Comprar a Coleção</a>
+      <a href="#" class="btn-ghost-white">Ver Lookbook</a>
+    </div>
+  </div>
+  <div class="coll-showcase">
+    <div class="show-item reveal" data-delay="0">
+      <div class="show-img">
+        <!-- ✅ <img src="imagens/colecao/onyx-conjunto.jpg" alt="Conjunto Onyx"> -->
+        <div class="show-img-fill"></div>
+      </div>
+      <div class="show-name">Conjunto Onyx</div>
+      <div class="show-price">R$349</div>
+    </div>
+    <div class="show-item reveal" data-delay="100">
+      <div class="show-img">
+        <!-- ✅ <img src="imagens/colecao/onyx-top.jpg" alt="Top Power"> -->
+        <div class="show-img-fill"></div>
+      </div>
+      <div class="show-name">Top Power</div>
+      <div class="show-price">R$179</div>
+    </div>
+    <div class="show-item reveal" data-delay="200">
+      <div class="show-img">
+        <!-- ✅ <img src="imagens/colecao/onyx-legging.jpg" alt="Legging Sculpt"> -->
+        <div class="show-img-fill"></div>
+      </div>
+      <div class="show-name">Legging Sculpt</div>
+      <div class="show-price">R$249</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  SOBRE / BRAND MESSAGE
+═══════════════════════════════════════════ -->
+<section class="brand-msg" id="about">
+  <div class="bm-grid">
+    <div class="bm-left reveal">
+      <div class="bm-tag">Nossa Filosofia</div>
+      <blockquote class="bm-quote">"Existe para<br/><em>transformar."</em></blockquote>
+      <p class="bm-body">A Thymos nasceu para quem não separa a disciplina do treino da disciplina da vida — de manhã no treino, à tarde na reunião. Cada peça foi criada para apoiar esse ritmo.</p>
+      <a href="#" class="btn-dark">Nossa História</a>
+    </div>
+    <div class="bm-right reveal">
+      <div class="bm-viz">
+        <!-- ✅ Substitua os divs coloridos por <img> reais -->
+        <div class="bv-item"><div class="bv-in bv-1"></div></div>
+        <div class="bv-item"><div class="bv-in bv-2"></div></div>
+        <div class="bv-item"><div class="bv-in bv-3"></div></div>
+        <div class="bv-item bv-4">
+          <div class="bv-text"><span class="bv-num">2021</span><span class="bv-lbl">Fundação</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  DEPOIMENTOS
+═══════════════════════════════════════════ -->
+<section class="testimonials">
+  <div class="sec-header reveal">
+    <span class="sec-tag">COMUNIDADE</span>
+    <h2>Quem Performa<br/><em>Veste Thymos</em></h2>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card reveal" data-delay="0">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"A qualidade do tecido é incrível — leve, respirável e aguenta qualquer treino pesado sem perder a forma."</p>
+      <div class="testi-author">
+        <div class="testi-av av1"></div>
+        <div><strong>Rafael T.</strong><span>Corrida — São Paulo</span></div>
+      </div>
+    </div>
+    <div class="testi-card feat reveal" data-delay="100">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Já experimentei várias marcas. A Thymos é outro nível — finalmente uma roupa de performance tão poderosa quanto eu me sinto."</p>
+      <div class="testi-author">
+        <div class="testi-av av2"></div>
+        <div><strong>Mariana K.</strong><span>Personal Trainer — Rio de Janeiro</span></div>
+      </div>
+    </div>
+    <div class="testi-card reveal" data-delay="200">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Entrega rápida, embalagem linda e a legging é perfeição absoluta. Essa virou minha marca favorita."</p>
+      <div class="testi-author">
+        <div class="testi-av av3"></div>
+        <div><strong>Ana L.</strong><span>Yoga — Belo Horizonte</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARRINHO -->
+<div class="cart-overlay" id="cart-overlay"></div>
+<aside class="cart-drawer" id="cart-drawer">
+  <div class="cart-hd">
+    <div class="cart-hd-left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+      </svg>
+      <h3>Seu Carrinho</h3>
+      <span class="cart-hd-count" id="cart-header-count">0 itens</span>
+    </div>
+    <button class="cart-close-btn" id="cart-close" aria-label="Fechar">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cart-ship-bar" id="cart-shipping-bar">
+    <div class="csb-text" id="shipping-bar-text">Falta <strong id="shipping-missing">R$299</strong> para frete grátis 🚚</div>
+    <div class="csb-track"><div class="csb-fill" id="shipping-bar-fill" style="width:0%"></div></div>
+  </div>
+  <div class="cart-items-list" id="cart-items">
+    <div class="cart-empty-state" id="cart-empty">
+      <div class="ces-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      <p class="ces-title">Carrinho vazio</p>
+      <p class="ces-sub">Adicione produtos para começar</p>
+      <a href="#products" class="btn-dark" id="cart-shop-link">Explorar Produtos</a>
+    </div>
+  </div>
+  <div class="cart-ft" id="cart-footer" style="display:none">
+    <div class="cart-coupon">
+      <input type="text" placeholder="Código de cupão" class="coupon-input" id="cart-coupon-input"/>
+      <button class="coupon-btn" onclick="applyCoupon()">Aplicar</button>
+    </div>
+    <div class="coupon-msg" id="cart-coupon-msg"></div>
+    <div class="cart-summary">
+      <div class="cart-row"><span>Subtotal</span><span id="cart-subtotal">R$0</span></div>
+      <div class="cart-row" id="cart-discount-row" style="display:none">
+        <span class="disc-label">Desconto (10%)</span><span id="cart-discount" class="disc-val">-R$0</span>
+      </div>
+      <div class="cart-row"><span>Frete</span><span id="cart-shipping-val">A calcular</span></div>
+      <div class="cart-row total"><span>Total</span><span id="cart-total">R$0</span></div>
+      <div class="cart-install">ou <strong id="cart-installment-val">3x de R$0</strong> sem juros</div>
+    </div>
+    <button class="checkout-btn" id="checkout-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+      Finalizar Compra
+    </button>
+    <p class="coupon-msg" id="checkout-msg" style="text-align:center"></p>
+    <div class="pay-row">
+      <span class="pay-lbl">Aceito:</span>
+      <div class="pay-icons">
+        <div class="pay-icon">PIX</div>
+        <div class="pay-icon">Visa</div>
+        <div class="pay-icon">MC</div>
+        <div class="pay-icon">Boleto</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- RODAPÉ -->
+<footer class="footer" id="footer">
+  <div class="footer-top">
+    <div>
+      <!-- Logo do rodapé: wordmark "thymos" via CSS (.f-logo), sem necessidade de imagem -->
+      <div class="f-logo logo-wordmark">thymos</div>
+      <p class="f-tag">Ativewear premium para quem<br/>faz da performance seu dia a dia.</p>
+      <div class="social-row">
+        <a href="#" class="soc-btn" aria-label="Instagram">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="#" class="soc-btn" aria-label="TikTok">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg>
+        </a>
+        <a href="#" class="soc-btn" aria-label="YouTube">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        </a>
+        <a href="#" class="soc-btn" aria-label="Pinterest">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.428 1.808-2.428.852 0 1.265.64 1.265 1.408 0 .858-.546 2.14-.828 3.33-.236.995.499 1.806 1.476 1.806 1.772 0 3.137-1.868 3.137-4.568 0-2.387-1.716-4.057-4.165-4.057-2.837 0-4.502 2.126-4.502 4.326 0 .856.33 1.773.741 2.274a.3.3 0 01.069.284c-.076.315-.245.995-.278 1.134-.044.183-.145.222-.334.134-1.249-.581-2.03-2.407-2.03-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.22-5.19 6.22-1.013 0-1.966-.527-2.292-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.522 0 10-4.477 10-10S17.522 2 12 2z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-nav-cols">
+      <div class="f-col"><h4>Loja</h4><ul><li><a href="#">Leggings</a></li><li><a href="#">Top Esportivo</a></li><li><a href="#">Camisetas Oversized</a></li><li><a href="#">Shorts</a></li><li><a href="#">Acessórios</a></li></ul></div>
+      <div class="f-col"><h4>Informações</h4><ul><li><a href="#">Sobre Nós</a></li><li><a href="#">Guia de Tamanhos</a></li><li><a href="#">Sustentabilidade</a></li><li><a href="#">Embaixadoras</a></li><li><a href="#">Blog</a></li></ul></div>
+      <div class="f-col"><h4>Atendimento</h4><ul><li><a href="#">Perguntas Frequentes</a></li><li><a href="#">Frete e Trocas</a></li><li><a href="#">Rastrear Pedido</a></li><li><a href="#">Fale Conosco</a></li><li><a href="#">Privacidade</a></li></ul></div>
+    </div>
+    <div class="f-news">
+      <h4>Fique por dentro</h4>
+      <p>Acesso antecipado, lançamentos exclusivos e inspiração fitness.</p>
+      <form class="news-form" onsubmit="handleNewsletter(event)">
+        <input type="email" class="news-input" placeholder="seu@email.com.br" required/>
+        <button type="submit" class="news-btn">→</button>
+      </form>
+      <div class="news-success" id="newsletter-success">✓ Bem-vinda à família THYMOS!</div>
+      <div class="f-contact">
+        <p>📍 São Paulo, Brasil</p>
+        <p>✉ contato@thymosfit.com.br</p>
+        <p>📞 (11) 99999-0000</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Thymos. Todos os direitos reservados.</span>
+    <span>Feito com paixão no Brasil, para quem performa todos os dias.</span>
+  </div>
+</footer>
+
+<!-- Configuração de deploy — preenchido pela equipe de e-commerce ao publicar
+     a loja (nunca contém segredos, apenas o domínio público da loja
+     Nuvemshop já conectada). Ver docs/DEPLOYMENT.md. -->
+<script>
+  window.THYMOS_CONFIG = {
+    nuvemshopStoreDomain: '', // ex.: 'thymos.lojavirtualnuvem.com.br' — preencher após conectar a loja
+  };
+</script>
+<script src="script.js"></script>
+<script>
+/* ── POPUP ── */
+function closeWelcome(){
+  const o=document.getElementById('welcome-overlay');
+  o.style.opacity='0';o.style.pointerEvents='none';
+  setTimeout(()=>o.remove(),400);
+  sessionStorage.setItem('wbClosed','1');
+}
+function handleWbForm(e){e.preventDefault();closeWelcome();}
+window.closeWelcome=closeWelcome;window.handleWbForm=handleWbForm;
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!sessionStorage.getItem('wbClosed')){
+    setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),1400);
+  } else {
+    document.getElementById('welcome-overlay').remove();
+  }
+  document.getElementById('wb-close').addEventListener('click',closeWelcome);
+});
+
+/* ── NAVBAR: dark sobre hero, claro ao scrollar ── */
+window.addEventListener('scroll',()=>{
+  const nav=document.getElementById('navbar');
+  const hero=document.getElementById('hero');
+  if(!hero){nav.classList.remove('on-hero');nav.classList.add('scrolled');return;}
+  const threshold=hero.offsetHeight*0.85;
+  if(window.scrollY>threshold){nav.classList.remove('on-hero');nav.classList.add('scrolled');}
+  else{nav.classList.remove('scrolled');nav.classList.add('on-hero');}
+},{passive:true});
+</script>
+</body>
+</html>
