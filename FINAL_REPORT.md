@@ -86,11 +86,12 @@ tipográfico "thymos" em minúsculas — sem símbolo, conforme o manual.
 
 | Integração | Estado |
 |---|---|
-| Nuvemshop OAuth | ✅ **Em produção e conectado** — loja real `ThymosFit` (store ID 7751289) autenticada e com token salvo |
+| Nuvemshop OAuth | ✅ **Em produção e conectado** — loja real `ThymosFit` (store ID 7751289) autenticada, token persistido no Supabase |
+| Painel incorporado (In-Admin App) | ✅ **Em produção** — abrir o app dentro do admin da loja mostra o painel `apps/admin` de verdade (Dashboard/Integrações/Logs/Configurações), com handshake Nexo |
 | Webhooks Nuvemshop | Código completo e testado; cadastro da URL no painel de parceiros ainda a confirmar pelo proprietário |
-| Supabase | Suportado (armazenamento de credenciais); com fallback automático em memória caso a configuração fique indisponível (ver `ResilientCredentialsStore`) |
+| Supabase | ✅ **Em produção** — projeto reativado (estava pausado por inatividade, ver 4.1), tabela `configuracoes` funcionando, credenciais persistindo de verdade entre restarts |
 | SMTP (e-mail) | ✅ Configurado — notificações de pedido pago / app desinstalado |
-| Railway (deploy) | ✅ **Em produção** — `apps/api` e `apps/admin` rodando e respondendo |
+| Railway (deploy) | ✅ **Em produção** — `apps/api` e `apps/admin` rodando e respondendo, CORS entre eles configurado corretamente |
 | GitHub | Repositório já configurado neste ambiente; push realizado na branch designada |
 
 ### 4.1 Deploy em produção (Railway)
@@ -122,13 +123,33 @@ Durante a conexão real com a loja `thymosfit3.lojavirtualnuvem.com.br`, três p
    página interna dela mesma
    (`partners.nuvemshop.com.br/applications/authentication/{app_id}`), não
    a URL cadastrada como "Site do aplicativo" — essa página mostra o
-   `code` de autorização e um comando `curl` para trocá-lo manualmente por
-   um `access_token`. A conexão da loja real foi concluída usando esse
-   `code` diretamente contra `/nuvemshop/callback`. Para eliminar esse passo
-   manual em reconexões futuras, falta localizar no Painel de Parceiros o
-   campo real de "Redirect URI"/"Autenticação OAuth" (distinto do "Site do
-   aplicativo") e apontá-lo para `/nuvemshop/callback` — não bloqueante,
-   a loja já está funcionando.
+   `code` de autorização (e, numa segunda tentativa, já indicou ter
+   confirmado a troca sozinha). A conexão da loja real foi concluída duas
+   vezes usando esse `code` diretamente contra `/nuvemshop/callback`
+   (o `state` usado no handshake é assinado por nós mesmos — qualquer state
+   válido e não expirado gerado por `/nuvemshop/connect` funciona, não
+   precisa ser exatamente o state original da requisição). Para eliminar
+   esse passo manual em reconexões futuras, falta localizar no Painel de
+   Parceiros o campo real de "Redirect URI"/"Autenticação OAuth" (distinto
+   do "Site do aplicativo") e apontá-lo para `/nuvemshop/callback` — não
+   bloqueante, a loja já está funcionando.
+5. **`SUPABASE_URL` não resolvia via DNS** (`getaddrinfo ENOTFOUND`) —
+   investigando com a **Management API do Supabase** (token pessoal
+   `sbp_...`, `GET /v1/projects`), a causa era simples: o projeto estava
+   com `status: INACTIVE` (planos gratuitos pausam por inatividade, e um
+   projeto pausado literalmente para de resolver DNS). Reativado via
+   `POST /v1/projects/{ref}/restore`; após alguns minutos (`COMING_UP` →
+   `RESTORING` → `ACTIVE_HEALTHY`) voltou a responder normalmente, sem
+   nenhuma mudança de URL ou chave necessária.
+6. **`CORS_ALLOWED_ORIGINS` ainda no valor padrão de desenvolvimento**
+   (`http://localhost:5173`) em produção — isso bloqueava silenciosamente
+   qualquer chamada do painel admin real (`apps/admin`, rodando em
+   `thymosadmin-production.up.railway.app`) para a API num navegador
+   (curl não reproduz isso, só o CORS do próprio navegador). Corrigido
+   pelo proprietário no Railway. Também adicionado um guard no código
+   (`config.ts`) para nunca redirecionar o app incorporado para uma
+   origem `localhost` em produção — cai no fallback estático em vez de
+   quebrar a tela do lojista.
 
 ## 5. Funcionalidades pendentes (documentadas, não bloqueantes)
 
@@ -158,16 +179,15 @@ reais:
 3. ~~Conectar a loja~~ — ✅ **feito**: loja `ThymosFit` (ID 7751289)
    conectada e autenticada em produção.
 4. ~~`SESSION_SECRET`~~ — ✅ configurado em produção.
-5. **Supabase**: variáveis configuradas; a URL informada inicialmente não
-   resolvia via DNS (`getaddrinfo ENOTFOUND`) — o sistema está operando com
-   o fallback em memória (`ResilientCredentialsStore`) enquanto isso não é
-   corrigido. Para persistência entre restarts, confirmar a **Project URL**
-   correta em Supabase → Project Settings → API e atualizar
-   `SUPABASE_URL` no Railway.
-6. **Domínio da loja Nuvemshop conectada** → preencher em
+5. ~~Supabase~~ — ✅ **feito**: projeto reativado (estava pausado, não era
+   um erro de configuração — ver 4.1, item 5) e credenciais persistindo de
+   verdade, confirmado consultando a tabela `configuracoes` diretamente.
+6. ~~`CORS_ALLOWED_ORIGINS` em produção~~ — ✅ corrigido pelo proprietário
+   no Railway; o painel admin real já consegue chamar a API num navegador.
+7. **Domínio da loja Nuvemshop conectada** → preencher em
    `apps/storefront/index.html` (`window.THYMOS_CONFIG.nuvemshopStoreDomain`)
    para o botão de checkout funcionar — ainda pendente.
-7. Decisão comercial pendente: hospedar o storefront como site próprio
+8. Decisão comercial pendente: hospedar o storefront como site próprio
    (CDN) ou como tema customizado dentro da própria Nuvemshop — ambos
    viáveis a partir do código atual, decisão não inferível automaticamente.
 
@@ -176,7 +196,11 @@ conversa foi usado apenas implicitamente pelo ambiente de execução para
 `git push` — nunca foi escrito em nenhum arquivo deste repositório
 (verificado por busca literal, ver `docs/SECURITY.md`). Como esse token
 esteve em texto plano na conversa, **recomenda-se revogá-lo e gerar um
-novo** no GitHub assim que este projeto for entregue, por precaução.
+novo** no GitHub assim que este projeto for entregue, por precaução. O
+mesmo vale para o token de acesso pessoal do Supabase (`sbp_...`) usado
+para reativar o projeto e para as demais credenciais que passaram em texto
+puro pelo chat (senha do Gmail, chave de service role do Supabase,
+senha do Painel de Parceiros Nuvemshop).
 
 ## 7. Como executar localmente
 
