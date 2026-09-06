@@ -291,24 +291,21 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
    CATEGORIAS — GRID FOTO
 ════════════════════════════════ */
 .categories{padding:88px 48px;max-width:1440px;margin:0 auto}
-.cat-grid{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:auto auto;gap:14px}
+/* 4 categorias (Acessórios removida por enquanto), sempre em grid par —
+   2x2 ou 1x4 — pra nunca sobrar uma célula vazia. */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .cat-card{position:relative;overflow:hidden;border-radius:4px;cursor:pointer}
-.cat-card.tall{grid-row:span 2}
-.cat-photo{position:relative;overflow:hidden;width:100%;transition:transform .6s var(--ease)}
-.cat-card.tall .cat-photo{height:100%;min-height:540px}
-.cat-card:not(.tall) .cat-photo{aspect-ratio:1/1}
+.cat-photo{position:relative;overflow:hidden;width:100%;transition:transform .6s var(--ease);aspect-ratio:3/4}
 .cat-card:hover .cat-photo{transform:scale(1.04)}
 /* Placeholders de cor — substituir por <img> */
 .cp-leggings{background:linear-gradient(145deg,#b8c0ac,#a7b197,#93a080)}
 .cp-bras{background:linear-gradient(145deg,#bac2ae,#aab49c,#9ba68a)}
 .cp-tees{background:linear-gradient(145deg,#cbd1c1,#bec5b3,#b1baa4)}
 .cp-shorts{background:linear-gradient(145deg,#c8cebe,#bac2ae,#aeb8a0)}
-.cp-acc{background:linear-gradient(145deg,#bec5b3,#b2bba5,#a5af95)}
 .cat-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(20,26,22,.72) 0%,transparent 55%)}
 .cat-photo img{width:100%;height:100%;object-fit:cover}
 .cat-info{position:absolute;bottom:0;left:0;right:0;padding:18px 20px;z-index:1}
 .cat-info h3{font-family:var(--font-display);font-size:1.3rem;letter-spacing:.06em;color:var(--white);margin-bottom:2px}
-.cat-card.tall .cat-info h3{font-size:1.9rem}
 .cat-info span{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.65);opacity:0;transform:translateY(5px);transition:all .3s var(--ease)}
 .cat-card:hover .cat-info span{opacity:1;transform:translateY(0)}
 
@@ -661,8 +658,6 @@ details.modal-details summary:hover{color:var(--nude)}
 }
 @media(max-width:1024px){
   .cat-grid{grid-template-columns:1fr 1fr}
-  .cat-card.tall{grid-row:span 1}
-  .cat-card.tall .cat-photo{min-height:300px;aspect-ratio:2/1}
   .bm-grid{grid-template-columns:1fr;gap:48px}
   .testi-grid{grid-template-columns:1fr 1fr}
   .testi-card:last-child{grid-column:span 2}
@@ -686,7 +681,6 @@ details.modal-details summary:hover{color:var(--nude)}
   .hero-side-text{display:none}
   .categories{padding:56px 20px}
   .cat-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .cat-card.tall{grid-column:span 2}
   .products{padding:56px 20px 80px}
   .prod-grid{grid-template-columns:repeat(2,1fr);gap:11px}
   .brand-msg{padding:72px 20px}
