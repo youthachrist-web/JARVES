@@ -220,7 +220,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     oldPrice: null,
     badge: 'Novo',
     stock: 6,
-    colors: ['#c8cebe', '#dde0d9, #b4bda7'],
+    colors: ['#c8cebe', '#dde0d9', '#b4bda7'],
     bg: 'linear-gradient(145deg, #e3e5df, #d5d8d0, #cad0c0)',
     images: [],
     sizes: ['PP', 'P', 'M', 'G', 'GG'],
@@ -348,9 +348,10 @@ const productsGrid = document.getElementById('products-grid');
 // ══════════════════════
 // NAVBAR
 // ══════════════════════
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 40);
-}, { passive: true });
+// O toggle de 'scrolled'/'on-hero' conforme a altura do hero vive no
+// <script> inline de index.html (precisa saber a altura da seção .hero,
+// que só existe na home) — não duplicar aqui para não ter dois listeners
+// de scroll competindo pela mesma classe a cada frame.
 
 hamburger.addEventListener('click', () => {
   hamburger.classList.toggle('open');
@@ -788,11 +789,11 @@ function applyCoupon() {
   if (input.value.trim().toUpperCase() === DISCOUNT_CODE) {
     cartDiscount = 0.10;
     msg.textContent = '✓ Cupão THYMOS10 aplicado — 10% de desconto!';
-    msg.className = 'cart-coupon-msg success';
+    msg.className = 'coupon-msg ok';
   } else {
     cartDiscount = 0;
     msg.textContent = '✗ Cupão inválido.';
-    msg.className = 'cart-coupon-msg error';
+    msg.className = 'coupon-msg err';
   }
   updateCartUI();
 }
@@ -1012,14 +1013,8 @@ document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click
 }));
 
 // ══════════════════════
-// PARALLAX + CURSOR + TILT
+// CURSOR + TILT (só em dispositivos com hover/mouse — ver checagem interna)
 // ══════════════════════
-function initParallax() {
-  const v = document.querySelector('.hero-visual');
-  if (!v) return;
-  window.addEventListener('scroll', () => { if(window.scrollY < window.innerHeight) v.style.transform = `translateY(${(window.scrollY/window.innerHeight)*40}px)`; }, {passive:true});
-}
-
 function initCursorGlow() {
   if (window.matchMedia('(hover: none)').matches) return;
   const g = Object.assign(document.createElement('div'), {style:'position:fixed;pointer-events:none;z-index:9999;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(114,138,110,0.08) 0%,transparent 70%);transform:translate(-50%,-50%);transition:opacity .3s;opacity:0'});
@@ -1048,7 +1043,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderProducts();
   initReveal();
-  initParallax();
   initCursorGlow();
   initCardTilt();
   updateCartUI();
