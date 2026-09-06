@@ -397,6 +397,20 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .trio-caption span{font-size:.58rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-400)}
 
 /* ════════════════════════════════
+   STORYTELLING — Quem somos, Missão & Visão,
+   Público-alvo, Tecnologia Sustentável
+════════════════════════════════ */
+.brand-story{padding:96px 48px;max-width:1200px;margin:0 auto}
+.story-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.story-card{padding:32px 26px;background:var(--off-white);border:1.5px solid var(--beige);border-radius:6px;transition:all .4s var(--ease)}
+.story-card:hover{transform:translateY(-4px);border-color:var(--nude-light);box-shadow:var(--sh)}
+.story-icon{font-size:1.6rem;margin-bottom:14px;line-height:1}
+.story-card h3{font-family:var(--font-display);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;color:var(--black);margin-bottom:12px}
+.story-card p{font-size:.78rem;color:var(--gray-400);line-height:1.8;font-weight:300}
+.story-tags{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.story-tags li{font-size:.6rem;font-weight:700;letter-spacing:.06em;color:var(--nude-dark);background:var(--nude-pale);border:1px solid var(--nude-light);border-radius:20px;padding:5px 12px}
+
+/* ════════════════════════════════
    DEPOIMENTOS
 ════════════════════════════════ */
 .testimonials{padding:88px 48px;max-width:1200px;margin:0 auto}
@@ -583,6 +597,7 @@ details.modal-details summary:hover{color:var(--nude)}
 .bv-in{width:100%;transition:transform .5s var(--ease)}
 .bv-item:hover .bv-in{transform:scale(1.03)}
 .bv-1 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c4cbb9,#aeb8a0)}
+.bv-photo{aspect-ratio:1/1.4;object-fit:cover;width:100%;height:100%;display:block}
 .bv-2 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c0c8b5,#aeb8a0);margin-top:30px}
 .bv-3 .bv-in{aspect-ratio:1/.7;background:linear-gradient(160deg,#d2d6cc,#c0c8b5)}
 .bv-4{display:flex;align-items:center;justify-content:center;border:1.5px solid var(--nude-light);background:var(--nude-pale);border-radius:4px}
@@ -628,6 +643,7 @@ details.modal-details summary:hover{color:var(--nude)}
   .prod-grid{grid-template-columns:repeat(3,1fr)}
   .footer-top{grid-template-columns:1fr 1fr}
   .f-news{grid-column:span 2}
+  .story-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:1024px){
   .cat-grid{grid-template-columns:1fr 1fr}
@@ -660,6 +676,8 @@ details.modal-details summary:hover{color:var(--nude)}
   .products{padding:56px 20px 80px}
   .prod-grid{grid-template-columns:repeat(2,1fr);gap:11px}
   .brand-msg{padding:72px 20px}
+  .brand-story{padding:56px 20px}
+  .story-grid{grid-template-columns:1fr}
   .collection{padding:72px 20px}
   .coll-showcase{grid-template-columns:repeat(3,1fr);gap:11px}
   .testimonials{padding:56px 20px}
