@@ -20,6 +20,10 @@ export interface AppConfig {
   supabaseServiceRoleKey: string | null
   nuvemshop: NuvemshopEnvConfig | null
   smtp: SmtpConfig | null
+  /** URL pública de `apps/admin` (o painel administrativo React). Usada para
+   * encaminhar o "app incorporado" da Nuvemshop para o painel de verdade em
+   * vez de uma página estática — ver routes/nuvemshop.ts. */
+  adminAppUrl: string | null
 }
 
 /**
@@ -58,17 +62,41 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     )
   }
 
+  const corsAllowedOrigins = (env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  // Sem ADMIN_APP_URL explícita, assume a primeira origem de CORS — em todo
+  // deploy deste projeto até agora, essa origem É o painel admin. Mantém o
+  // app incorporado funcionando "de fábrica" sem exigir uma variável nova,
+  // mas pode ser sobrescrita se algum dia isso deixar de ser verdade.
+  //
+  // Nunca usa um valor de localhost aqui: se CORS_ALLOWED_ORIGINS ainda
+  // estiver no padrão de desenvolvimento (por falta de configuração em
+  // produção), redirecionar o iframe da Nuvemshop para localhost quebraria
+  // a tela por completo no navegador do lojista — melhor cair no fallback
+  // estático (ver routes/nuvemshop.ts) do que mandar para um endereço que
+  // não existe fora da máquina de quem está desenvolvendo.
+  const candidateAdminAppUrl = env.ADMIN_APP_URL || corsAllowedOrigins[0] || null
+  const adminAppUrl =
+    candidateAdminAppUrl && !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(candidateAdminAppUrl) ? candidateAdminAppUrl : null
+
+  if (!adminAppUrl) {
+    logger.warn(
+      'ADMIN_APP_URL não configurada (e CORS_ALLOWED_ORIGINS não aponta para uma origem pública) — o app incorporado na Nuvemshop vai usar uma página estática simples em vez do painel administrativo completo.'
+    )
+  }
+
   return {
     port: Number(env.PORT || 3000),
-    corsAllowedOrigins: (env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
+    corsAllowedOrigins,
     sessionSecret: env.SESSION_SECRET || null,
     supabaseUrl,
     supabaseAnonKey,
     supabaseServiceRoleKey,
     nuvemshop,
     smtp,
+    adminAppUrl,
   }
 }
