@@ -3,6 +3,17 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
+// Ícones inline (sem emoji) reaproveitados em várias strings de HTML
+// geradas dinamicamente — mesmo estilo das svgs estáticas do index.html
+// (stroke-based, currentColor).
+const ICONS = {
+  warning: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  truck: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  refresh: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>',
+  lock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>',
+  check: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+};
+
 // ══════════════════════════════════════════════════════
 //  CATÁLOGO DE PRODUTOS
 //
@@ -378,7 +389,7 @@ function openModal(productId) {
 
   // Stock badge (classes conforme .modal-stock-tag do style.css)
   const stockBadge = p.stock <= 5
-    ? `<div class="modal-stock-tag low">⚠️ Apenas ${p.stock} em estoque!</div>`
+    ? `<div class="modal-stock-tag low">${ICONS.warning} Apenas ${p.stock} em estoque!</div>`
     : p.stock <= 10
     ? `<div class="modal-stock-tag med">✓ ${p.stock} unidades disponíveis</div>`
     : `<div class="modal-stock-tag ok">✓ Em estoque (${p.stock} un.)</div>`;
@@ -479,7 +490,7 @@ function openModal(productId) {
             </div>
             <div class="sizes-row" id="modal-sizes-${p.id}">${sizesHtml}</div>
             <div class="modal-hint" id="size-hint-${p.id}" style="display:none">
-              ⚠️ Por favor selecione um tamanho
+              ${ICONS.warning} Por favor selecione um tamanho
             </div>
           </div>` : ''}
 
@@ -512,9 +523,9 @@ function openModal(productId) {
           </div>
 
           <div class="modal-shipping-info">
-            <div class="msi-item">🚚 <span>Frete grátis acima de R$${FREE_SHIPPING}</span></div>
-            <div class="msi-item">🔄 <span>Troca grátis em até 30 dias</span></div>
-            <div class="msi-item">🔒 <span>Pagamento 100% seguro — Pix, cartão, boleto</span></div>
+            <div class="msi-item">${ICONS.truck} <span>Frete grátis acima de R$${FREE_SHIPPING}</span></div>
+            <div class="msi-item">${ICONS.refresh} <span>Troca grátis em até 30 dias</span></div>
+            <div class="msi-item">${ICONS.lock} <span>Pagamento 100% seguro — Pix, cartão, boleto</span></div>
           </div>
         </div>
       </div>
@@ -731,7 +742,7 @@ function createProductCard(p, delay = 0) {
   const badgeHtml   = p.badge ? `<div class="prod-badge ${p.badge==='Novo'?'new':''}">${p.badge}</div>` : '';
   const oldPriceHtml = p.oldPrice ? `<span class="prod-old">R$${p.oldPrice}</span>` : '';
   const colorDots   = p.colors.map(c => `<div class="color-dot" style="background:${c}"></div>`).join('');
-  const stockWarn   = p.stock <= 5 ? `<div class="prod-stock-warn">⚠️ Últimas ${p.stock} unidades</div>` : '';
+  const stockWarn   = p.stock <= 5 ? `<div class="prod-stock-warn">${ICONS.warning} Últimas ${p.stock} unidades</div>` : '';
 
   const svgBg = `<svg viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.45">
     <defs><radialGradient id="pg${p.id}" cx="50%" cy="35%" r="55%">
@@ -923,7 +934,7 @@ function updateCartUI() {
     const pct = Math.min((total / FREE_SHIPPING) * 100, 100);
     bar.style.width = pct + '%';
     if (total >= FREE_SHIPPING) {
-      barText.innerHTML = '🎉 Parabéns! Você ganhou <strong>frete grátis</strong>!';
+      barText.innerHTML = `${ICONS.check} Parabéns! Você ganhou <strong>frete grátis</strong>!`;
     } else {
       const diff = FREE_SHIPPING - total;
       if (missing) missing.textContent = `R$${diff.toLocaleString('pt-BR')}`;
@@ -953,7 +964,7 @@ function updateCartUI() {
   }
 
   const ship = document.getElementById('cart-shipping-val');
-  if (ship) ship.textContent = total >= FREE_SHIPPING ? 'GRÁTIS 🎉' : 'A calcular';
+  if (ship) ship.textContent = total >= FREE_SHIPPING ? 'GRÁTIS' : 'A calcular';
   ship?.classList.toggle('cart-free', total >= FREE_SHIPPING);
 
   const inst = document.getElementById('cart-installment-val');
