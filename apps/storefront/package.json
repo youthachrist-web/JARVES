@@ -1,0 +1,13 @@
+{
+  "name": "@thymos/storefront",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Loja pública Thymos — HTML/CSS/JS estático, sem build step, consumindo os design tokens de @thymos/tokens",
+  "scripts": {
+    "dev": "node -e \"require('http').createServer(require('serve-handler')).listen(4173,()=>console.log('http://localhost:4173'))\"",
+    "sync-tokens": "cp ../../packages/tokens/css/tokens.css ./tokens/tokens.css && echo '✓ tokens.css sincronizado'"
+  },
+  "devDependencies": {
+    "serve-handler": "^6.1.5"
+  }
+}

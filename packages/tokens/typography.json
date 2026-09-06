@@ -1,0 +1,30 @@
+{
+  "$schema": "Fonte: Manual da marca Thymos (2025) — Comfortaa (corpo/wordmark) + Bebas Neue (display)",
+  "families": {
+    "display": {
+      "value": "'Bebas Neue', 'Oswald', sans-serif",
+      "label": "Títulos grandes, hero, banners — uppercase, condensada"
+    },
+    "body": {
+      "value": "'Comfortaa', 'Poppins', sans-serif",
+      "label": "Wordmark, navegação, corpo de texto, botões — geométrica arredondada"
+    }
+  },
+  "weights": {
+    "regular": 400,
+    "medium": 500,
+    "semibold": 600,
+    "bold": 700
+  },
+  "scale": {
+    "display-xl": { "size": "clamp(3rem, 8vw, 7rem)", "lineHeight": 0.95, "letterSpacing": "0.02em", "family": "display" },
+    "display-lg": { "size": "clamp(2.2rem, 5vw, 4rem)", "lineHeight": 1.02, "letterSpacing": "0.02em", "family": "display" },
+    "display-md": { "size": "clamp(1.6rem, 3.5vw, 2.6rem)", "lineHeight": 1.05, "letterSpacing": "0.03em", "family": "display" },
+    "heading": { "size": "1.25rem", "lineHeight": 1.3, "letterSpacing": "0.01em", "family": "body", "weight": "semibold" },
+    "body-lg": { "size": "1.05rem", "lineHeight": 1.7, "family": "body", "weight": "regular" },
+    "body": { "size": "0.92rem", "lineHeight": 1.65, "family": "body", "weight": "regular" },
+    "body-sm": { "size": "0.8rem", "lineHeight": 1.6, "family": "body", "weight": "regular" },
+    "eyebrow": { "size": "0.65rem", "lineHeight": 1, "letterSpacing": "0.35em", "family": "body", "weight": "bold", "transform": "uppercase" },
+    "button": { "size": "0.72rem", "lineHeight": 1, "letterSpacing": "0.14em", "family": "body", "weight": "bold", "transform": "uppercase" }
+  }
+}

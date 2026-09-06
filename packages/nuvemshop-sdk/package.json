@@ -1,0 +1,20 @@
+{
+  "name": "@thymos/nuvemshop-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cliente TypeScript tipado para a API da Nuvemshop/Tiendanube — OAuth, produtos, pedidos, clientes, webhooks (com validação HMAC), retry e respeito a rate limit",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

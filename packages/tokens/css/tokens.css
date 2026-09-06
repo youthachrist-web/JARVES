@@ -1,0 +1,119 @@
+/* ═══════════════════════════════════════════════════════
+   THYMOS — Design Tokens (gerado automaticamente)
+   Fonte: packages/tokens/*.json — NÃO editar este arquivo à mão.
+   Regenerar com: node packages/tokens/build-css.mjs
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* brand-primary */
+  --color-brand-primary-forest: #324d3e;
+  --color-brand-primary-sage: #728a6e;
+  --color-brand-primary-mist: #d9e4d7;
+  /* brand-secondary */
+  --color-brand-secondary-walnut: #5c3d2e;
+  --color-brand-secondary-sand: #c4a882;
+  --color-brand-secondary-moss: #8ea48b;
+  --color-brand-secondary-linen: #e2ddd4;
+  --color-brand-cream: #f5f2ea;
+  /* neutral */
+  --color-neutral-white: #ffffff;
+  --color-neutral-black: #141a16;
+  --color-neutral-gray-100: #f4f5f3;
+  --color-neutral-gray-200: #e6e8e3;
+  --color-neutral-gray-300: #cdd1c8;
+  --color-neutral-gray-400: #a4aa9d;
+  --color-neutral-gray-500: #767d71;
+  --color-neutral-gray-600: #565d52;
+  --color-neutral-gray-700: #3a3f36;
+  --color-neutral-gray-800: #252923;
+  /* semantic */
+  --color-semantic-background: #ffffff;
+  --color-semantic-background-inverse: #324d3e;
+  --color-semantic-surface: #f4f5f3;
+  --color-semantic-surface-inverse: #26382e;
+  --color-semantic-text-primary: #141a16;
+  --color-semantic-text-secondary: #565d52;
+  --color-semantic-text-on-dark: #f5f2ea;
+  --color-semantic-text-muted: #767d71;
+  --color-semantic-border: #e6e8e3;
+  --color-semantic-border-strong: #cdd1c8;
+  --color-semantic-accent: #728a6e;
+  --color-semantic-accent-strong: #324d3e;
+  --color-semantic-focus-ring: #c4a882;
+  --color-semantic-success: #3a8c5c;
+  --color-semantic-warning: #b8863a;
+  --color-semantic-danger: #b8453a;
+  --color-semantic-info: #728a6e;
+
+  /* typography */
+  --font-display: 'Bebas Neue', 'Oswald', sans-serif;
+  --font-body: 'Comfortaa', 'Poppins', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --text-display-xl-size: clamp(3rem, 8vw, 7rem);
+  --text-display-xl-line-height: 0.95;
+  --text-display-xl-tracking: 0.02em;
+  --text-display-lg-size: clamp(2.2rem, 5vw, 4rem);
+  --text-display-lg-line-height: 1.02;
+  --text-display-lg-tracking: 0.02em;
+  --text-display-md-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  --text-display-md-line-height: 1.05;
+  --text-display-md-tracking: 0.03em;
+  --text-heading-size: 1.25rem;
+  --text-heading-line-height: 1.3;
+  --text-heading-tracking: 0.01em;
+  --text-body-lg-size: 1.05rem;
+  --text-body-lg-line-height: 1.7;
+  --text-body-size: 0.92rem;
+  --text-body-line-height: 1.65;
+  --text-body-sm-size: 0.8rem;
+  --text-body-sm-line-height: 1.6;
+  --text-eyebrow-size: 0.65rem;
+  --text-eyebrow-line-height: 1;
+  --text-eyebrow-tracking: 0.35em;
+  --text-button-size: 0.72rem;
+  --text-button-line-height: 1;
+  --text-button-tracking: 0.14em;
+
+  /* spacing */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* radius */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* shadows */
+  --shadow-sm: 0 1px 3px rgba(20, 26, 22, 0.08);
+  --shadow-md: 0 4px 16px rgba(20, 26, 22, 0.10);
+  --shadow-lg: 0 12px 40px rgba(20, 26, 22, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(196, 168, 130, 0.45);
+}
+
+/* breakpoints (referência — usar em @media diretamente, CSS não suporta var() em media queries) */
+/*
+ * sm: 480px
+ * md: 768px
+ * lg: 1024px
+ * xl: 1200px
+ * xxl: 1440px
+ */
+
