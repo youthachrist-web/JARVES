@@ -57,6 +57,12 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   const mailer = deps.mailer ?? createMailer(config.smtp)
 
   app.disable('x-powered-by')
+  // Necessário para que req.protocol reflita `https` corretamente atrás do
+  // proxy do Railway (a conexão interna ao container é HTTP puro; sem isso,
+  // req.protocol sempre reportaria "http" mesmo em produção) — usado ao
+  // montar a URL pública desta API para o painel embutido (ver
+  // routes/nuvemshop.ts).
+  app.set('trust proxy', true)
   app.use(corsMiddleware(config.corsAllowedOrigins))
 
   // `captureRawBody` faz o parse de JSON preservando o corpo bruto em

@@ -28,6 +28,23 @@ function unavailable(res: import('express').Response, reason: string) {
  * simplesmente nunca resolve e o try/catch abaixo garante que isso não
  * afete a exibição do conteúdo visível da página.
  */
+/**
+ * Monta a URL de redirecionamento para o painel administrativo embutido,
+ * incluindo a URL pública desta própria API (deduzida da requisição, via
+ * req.protocol + Host). Isso evita depender de `VITE_API_BASE_URL` estar
+ * corretamente configurada no build do apps/admin — o Vite grava essa
+ * variável em tempo de build, então bastaria alguém setá-la no Railway sem
+ * disparar um novo build para o painel continuar apontando para
+ * `http://localhost:3000` (o padrão de desenvolvimento) mesmo em produção.
+ * O painel lê `apiBaseUrl` da query string e salva automaticamente em
+ * `localStorage` antes de qualquer chamada (ver apps/admin/src/main.jsx).
+ */
+function buildAdminRedirectUrl(adminAppUrl: string, req: import('express').Request, appId: string, extra: Record<string, string> = {}): string {
+  const apiBaseUrl = `${req.protocol}://${req.get('host')}`
+  const params = new URLSearchParams({ embedded: '1', appId, apiBaseUrl, ...extra })
+  return `${adminAppUrl}/?${params.toString()}`
+}
+
 function renderPage(title: string, bodyHtml: string, appId: string): string {
   return (
     `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Thymos — ${title}</title></head>` +
@@ -94,7 +111,7 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
     // o que aparece de fato dentro do admin da Nuvemshop ao abrir o app.
     if (!code && !state) {
       if (config.adminAppUrl) {
-        res.redirect(302, `${config.adminAppUrl}/?embedded=1&appId=${encodeURIComponent(config.nuvemshop.appId)}`)
+        res.redirect(302, buildAdminRedirectUrl(config.adminAppUrl, req, config.nuvemshop.appId))
         return
       }
       // Fallback só usado se ADMIN_APP_URL/CORS_ALLOWED_ORIGINS não estiver
@@ -139,7 +156,7 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja conectada com sucesso', detail: { storeId } })
 
       if (config.adminAppUrl) {
-        res.redirect(302, `${config.adminAppUrl}/?embedded=1&appId=${encodeURIComponent(config.nuvemshop.appId)}&justConnected=1`)
+        res.redirect(302, buildAdminRedirectUrl(config.adminAppUrl, req, config.nuvemshop.appId, { justConnected: '1' }))
         return
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8')

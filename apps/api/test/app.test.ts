@@ -137,7 +137,14 @@ describe('GET /nuvemshop/callback', () => {
     const app = createApp(baseConfig({ adminAppUrl: 'https://thymosadmin-production.up.railway.app' }), { credentialsStore })
     const res = await request(app).get('/nuvemshop/callback')
     expect(res.status).toBe(302)
-    expect(res.headers.location).toBe('https://thymosadmin-production.up.railway.app/?embedded=1&appId=32653')
+    const location = new URL(res.headers.location)
+    expect(`${location.origin}${location.pathname}`).toBe('https://thymosadmin-production.up.railway.app/')
+    expect(location.searchParams.get('embedded')).toBe('1')
+    expect(location.searchParams.get('appId')).toBe('32653')
+    // A URL pública da própria API vai junto — o painel usa isso para saber
+    // onde chamar a API, sem depender de VITE_API_BASE_URL (gravada só em
+    // tempo de build) estar correta.
+    expect(location.searchParams.get('apiBaseUrl')).toMatch(/^https?:\/\/.+/)
   })
 
   it('encaminha (302) para o painel administrativo mesmo sem a loja estar conectada ainda', async () => {
@@ -146,7 +153,10 @@ describe('GET /nuvemshop/callback', () => {
     })
     const res = await request(app).get('/nuvemshop/callback')
     expect(res.status).toBe(302)
-    expect(res.headers.location).toBe('https://thymosadmin-production.up.railway.app/?embedded=1&appId=32653')
+    const location = new URL(res.headers.location)
+    expect(`${location.origin}${location.pathname}`).toBe('https://thymosadmin-production.up.railway.app/')
+    expect(location.searchParams.get('embedded')).toBe('1')
+    expect(location.searchParams.get('appId')).toBe('32653')
   })
 })
 
