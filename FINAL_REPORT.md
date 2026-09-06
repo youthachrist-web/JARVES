@@ -86,10 +86,49 @@ tipográfico "thymos" em minúsculas — sem símbolo, conforme o manual.
 
 | Integração | Estado |
 |---|---|
-| Nuvemshop OAuth | Código completo e testado; **conexão real pendente** de `NUVEMSHOP_APP_SECRET` (ver seção 6) |
-| Webhooks Nuvemshop | Código completo e testado; **cadastro da URL no painel de parceiros pendente** do proprietário |
-| Supabase | Suportado (armazenamento de credenciais), opcional — funciona em memória sem ele (dev only) |
+| Nuvemshop OAuth | ✅ **Em produção e conectado** — loja real `ThymosFit` (store ID 7751289) autenticada e com token salvo |
+| Webhooks Nuvemshop | Código completo e testado; cadastro da URL no painel de parceiros ainda a confirmar pelo proprietário |
+| Supabase | Suportado (armazenamento de credenciais); com fallback automático em memória caso a configuração fique indisponível (ver `ResilientCredentialsStore`) |
+| SMTP (e-mail) | ✅ Configurado — notificações de pedido pago / app desinstalado |
+| Railway (deploy) | ✅ **Em produção** — `apps/api` e `apps/admin` rodando e respondendo |
 | GitHub | Repositório já configurado neste ambiente; push realizado na branch designada |
+
+### 4.1 Deploy em produção (Railway)
+
+O projeto está no ar em:
+- API: `https://thymosapi-production.up.railway.app`
+- Admin: `https://thymosadmin-production.up.railway.app`
+
+Durante a conexão real com a loja `thymosfit3.lojavirtualnuvem.com.br`, três problemas de produção foram encontrados e corrigidos (nenhum bloqueia o funcionamento atual):
+
+1. **`/nuvemshop/status` derrubava o processo inteiro** quando o
+   `credentialsStore` (Supabase) falhava — Express 4 não captura erros
+   assíncronos automaticamente, e uma rejeição não tratada matava o processo
+   Node. Corrigido envolvendo a rota inteira em try/catch; adicionado
+   `ResilientCredentialsStore`, que cai automaticamente para um fallback em
+   memória sempre que o Supabase estiver inacessível (URL errada, tabela
+   ausente, projeto pausado), sem nunca bloquear a conexão da loja.
+2. **"Ocorreu um erro com o aplicativo"** no admin da loja: a mesma URL
+   cadastrada como "Site do aplicativo" no Painel de Parceiros é carregada
+   pela Nuvemshop dentro de um iframe sempre que o lojista abre o app já
+   instalado — sem nenhum parâmetro de OAuth. Corrigido tratando esse caso
+   com uma página HTML amigável em vez de um erro 400.
+3. **Handshake obrigatório do Nexo**: a Nuvemshop só considera um "app
+   incorporado" carregado quando ele chama `iAmReady()` via
+   `@tiendanube/nexo` — sem isso, o admin mostra o erro mesmo com a página
+   respondendo 200 normalmente. Adicionado o carregamento do SDK e o
+   handshake em toda página renderizada pelo fluxo OAuth.
+4. O **redirect_uri efetivamente usado pela Nuvemshop para este app** é uma
+   página interna dela mesma
+   (`partners.nuvemshop.com.br/applications/authentication/{app_id}`), não
+   a URL cadastrada como "Site do aplicativo" — essa página mostra o
+   `code` de autorização e um comando `curl` para trocá-lo manualmente por
+   um `access_token`. A conexão da loja real foi concluída usando esse
+   `code` diretamente contra `/nuvemshop/callback`. Para eliminar esse passo
+   manual em reconexões futuras, falta localizar no Painel de Parceiros o
+   campo real de "Redirect URI"/"Autenticação OAuth" (distinto do "Site do
+   aplicativo") e apontá-lo para `/nuvemshop/callback` — não bloqueante,
+   a loja já está funcionando.
 
 ## 5. Funcionalidades pendentes (documentadas, não bloqueantes)
 
@@ -112,19 +151,22 @@ tipográfico "thymos" em minúsculas — sem símbolo, conforme o manual.
 Nada do código está bloqueado por isso — apenas a validação final com dados
 reais:
 
-1. **`NUVEMSHOP_APP_SECRET`** real do app 32653 → variável de ambiente de
-   `apps/api` em produção (nunca commitar).
-2. **Cadastrar a URL de callback OAuth e a URL de webhook** no painel de
-   parceiros Nuvemshop, apontando para o domínio real de `apps/api` (ver
-   `docs/NUVEMSHOP_SETUP.md`).
-3. **Conectar a loja** (contatothymosfits@gmail.com) uma vez, manualmente,
-   via `/nuvemshop/connect`.
-4. **`SESSION_SECRET`** — gerar um valor aleatório forte para produção.
-5. **Supabase** (opcional, recomendado para produção): criar projeto e
-   preencher `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`.
+1. ~~`NUVEMSHOP_APP_SECRET` real do app 32653~~ — ✅ configurado em produção.
+2. ~~Cadastrar a URL de callback OAuth e a URL de webhook~~ — ✅ "Site do
+   aplicativo" cadastrado; ver nota sobre o redirect_uri real na seção 4.1
+   (pendência não bloqueante, apenas evita um passo manual em reconexões).
+3. ~~Conectar a loja~~ — ✅ **feito**: loja `ThymosFit` (ID 7751289)
+   conectada e autenticada em produção.
+4. ~~`SESSION_SECRET`~~ — ✅ configurado em produção.
+5. **Supabase**: variáveis configuradas; a URL informada inicialmente não
+   resolvia via DNS (`getaddrinfo ENOTFOUND`) — o sistema está operando com
+   o fallback em memória (`ResilientCredentialsStore`) enquanto isso não é
+   corrigido. Para persistência entre restarts, confirmar a **Project URL**
+   correta em Supabase → Project Settings → API e atualizar
+   `SUPABASE_URL` no Railway.
 6. **Domínio da loja Nuvemshop conectada** → preencher em
    `apps/storefront/index.html` (`window.THYMOS_CONFIG.nuvemshopStoreDomain`)
-   para o botão de checkout funcionar.
+   para o botão de checkout funcionar — ainda pendente.
 7. Decisão comercial pendente: hospedar o storefront como site próprio
    (CDN) ou como tema customizado dentro da própria Nuvemshop — ambos
    viáveis a partir do código atual, decisão não inferível automaticamente.
@@ -176,8 +218,8 @@ callback, escopos, webhooks, fluxo de conexão).
 
 **Nuvemshop**
 - [x] Integração configurada (código completo e testado)
-- [ ] Autenticação funcionando com a loja real — **pendente do
-      `NUVEMSHOP_APP_SECRET` real e da conexão manual** (seção 6)
+- [x] Autenticação funcionando com a loja real — loja `ThymosFit`
+      (ID 7751289) conectada em produção
 - [x] Produtos — sincronização implementada e testada (mocks)
 - [x] Webhooks — implementados, validados por assinatura, testados
 - [x] Erros tratados (retry, rate limit, timeout, payload inválido)
