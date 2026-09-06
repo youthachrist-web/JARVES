@@ -467,6 +467,16 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .coupon-msg{font-size:.6rem;font-weight:600;min-height:18px;margin-bottom:10px}
 .coupon-msg.ok{color:#3a8c5c}
 .coupon-msg.err{color:#b8453a}
+
+/* Formulário de captura de pedido — checkout sem gateway de pagamento
+   (ver script.js handleCheckout/submitOrder): coleta contato do cliente e
+   registra o pedido via apps/api, sem depender da Nuvemshop conectada. */
+.checkout-form{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.checkout-form input{padding:10px 13px;background:var(--white);border:1.5px solid var(--beige);border-radius:var(--r);font-size:.75rem;color:var(--gray-700);outline:none;transition:border-color .2s}
+.checkout-form input:focus{border-color:var(--nude)}
+.checkout-form input::placeholder{color:var(--gray-300)}
+.checkout-cancel-btn{background:none;border:none;color:var(--gray-400);font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:6px;text-align:center}
+.checkout-cancel-btn:hover{color:var(--gray-700)}
 .cart-summary{margin-bottom:13px}
 .cart-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:.72rem;color:var(--gray-400);letter-spacing:.02em}
 .cart-row.total{border-top:1.5px solid var(--beige);margin-top:7px;padding-top:13px;font-weight:700;color:var(--black);font-size:.86rem}

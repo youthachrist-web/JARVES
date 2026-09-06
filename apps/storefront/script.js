@@ -15,7 +15,11 @@
 //  Campos obrigatórios: id, name, category, price, bg
 //  Campos opcionais:    oldPrice, badge, stock, images, sizes, description, details
 // ══════════════════════════════════════════════════════
-const products = [
+// Catálogo de exemplo — usado apenas como FALLBACK se a API real
+// (Supabase, via apps/api) estiver fora do ar. Em uso normal, `products` é
+// substituído pelo catálogo de verdade em loadProducts() antes do primeiro
+// render. Nunca deixa a vitrine em branco por causa de uma falha de rede.
+const MOCK_PRODUCTS_FALLBACK = [
   {
     id: 1,
     name: 'Conjunto Sculpt graphite',
@@ -269,6 +273,55 @@ const products = [
     details: ['Aço inoxidável 18/8 parede dupla', 'Gelado 24h / quente 12h', 'Capacidade: 500ml ou 750ml', 'Tampa de abertura rápida', 'Livre de BPA'],
   },
 ];
+
+// Catálogo efetivamente exibido — populado por loadProducts() a partir da
+// API real (Supabase). Começa com o fallback para nunca ficar vazio caso
+// o carregamento demore ou falhe.
+let products = MOCK_PRODUCTS_FALLBACK.slice();
+
+const DEFAULT_PRODUCT_BG = 'linear-gradient(145deg, #e1e3dd, #d3d6cd, #c6ccbc)';
+
+/**
+ * Converte um produto vindo de GET /products (apps/api → tabela `produtos`
+ * no Supabase) para o mesmo formato que createProductCard()/openProductModal()
+ * já sabem renderizar. Mantém o storefront funcionando com o catálogo real,
+ * sem exigir a Nuvemshop conectada — ver routes/shop.ts.
+ */
+function mapApiProduct(p) {
+  const hasPromo = typeof p.promotionalPrice === 'number' && p.promotionalPrice > 0 && p.promotionalPrice < p.price;
+  return {
+    id: p.id,
+    name: p.name,
+    category: p.category || 'Thymos',
+    price: hasPromo ? p.promotionalPrice : p.price,
+    oldPrice: hasPromo ? p.price : null,
+    badge: p.stock > 0 && p.stock <= 5 ? 'Últimas unidades' : null,
+    stock: p.stock,
+    colors: [], // o catálogo real ainda não tem swatches de cor em hex
+    bg: DEFAULT_PRODUCT_BG,
+    images: p.images || [],
+    sizes: p.sizes || [],
+    description: p.description || '',
+    details: [],
+  };
+}
+
+async function loadProducts() {
+  const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
+  if (!apiBaseUrl) return; // sem API configurada — segue com o fallback
+  try {
+    const res = await fetch(`${apiBaseUrl}/products`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data.products) && data.products.length > 0) {
+      products = data.products.map(mapApiProduct);
+    }
+  } catch (err) {
+    // Mantém o catálogo de exemplo — nunca deixa a página quebrada ou em
+    // branco por causa de uma falha de rede/API.
+    console.warn('Não foi possível carregar o catálogo real, usando exemplos:', err.message);
+  }
+}
 
 // ── CONFIGURAÇÕES ──
 const INITIAL_COUNT   = 8;
@@ -849,30 +902,84 @@ document.getElementById('cart-shop-link')?.addEventListener('click', closeCart);
 // ══════════════════════
 // CHECKOUT
 // ══════════════════════
-// O checkout transacional (pagamento, endereço, frete) é responsabilidade
-// da própria Nuvemshop — não deve ser reimplementado aqui (ver FASE 8 do
-// briefing e docs/NUVEMSHOP_SETUP.md). Este storefront é a vitrine; ao
-// finalizar a compra, o cliente é levado ao checkout hospedado da loja já
-// conectada. Até a loja real estar conectada (window.THYMOS_CONFIG
-// preenchido), mostramos uma mensagem clara em vez de simular um checkout
-// que não existe.
+// Checkout próprio, independente da Nuvemshop: captura os dados de contato
+// do cliente e registra o pedido via apps/api (POST /orders → Supabase,
+// tabela `pedidos`), sem gateway de pagamento integrado ainda — a loja
+// recebe uma notificação por e-mail e entra em contato para confirmar
+// pagamento/frete. Se window.THYMOS_CONFIG.nuvemshopStoreDomain estiver
+// preenchido (loja Nuvemshop conectada), usa o checkout hospedado dela em
+// vez disso — mas isso é opcional, não o caminho padrão.
 function handleCheckout() {
-  const msg = document.getElementById('checkout-msg');
   if (cart.length === 0) return;
 
   const domain = window.THYMOS_CONFIG?.nuvemshopStoreDomain;
   if (domain) {
-    // Redireciona ao checkout hospedado da Nuvemshop da loja conectada.
     window.location.href = `https://${domain}/checkout`;
     return;
   }
 
-  if (msg) {
-    msg.textContent = 'Checkout ainda não conectado à Nuvemshop — configure window.THYMOS_CONFIG.nuvemshopStoreDomain após conectar a loja.';
-    msg.className = 'coupon-msg err';
-  }
+  document.getElementById('checkout-btn').style.display = 'none';
+  document.getElementById('checkout-form').style.display = 'flex';
 }
 document.getElementById('checkout-btn')?.addEventListener('click', handleCheckout);
+
+document.getElementById('checkout-cancel')?.addEventListener('click', () => {
+  document.getElementById('checkout-form').style.display = 'none';
+  document.getElementById('checkout-btn').style.display = '';
+  const msg = document.getElementById('checkout-msg');
+  if (msg) { msg.textContent = ''; msg.className = 'coupon-msg'; }
+});
+
+async function submitOrder(e) {
+  e.preventDefault();
+  const msg = document.getElementById('checkout-msg');
+  const submitBtn = document.getElementById('checkout-confirm-btn');
+  const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
+
+  const customerName = document.getElementById('checkout-name').value.trim();
+  const customerEmail = document.getElementById('checkout-email').value.trim();
+  const customerPhone = document.getElementById('checkout-phone').value.trim();
+
+  if (!apiBaseUrl) {
+    if (msg) { msg.textContent = 'Checkout indisponível no momento. Tente novamente mais tarde.'; msg.className = 'coupon-msg err'; }
+    return;
+  }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const total = Math.round(subtotal * (1 - cartDiscount));
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Enviando...';
+  try {
+    const res = await fetch(`${apiBaseUrl}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || undefined,
+        items: cart.map(i => ({ productId: i.id, name: i.name, price: i.price, qty: i.qty })),
+        total,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+
+    if (msg) { msg.textContent = `✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.`; msg.className = 'coupon-msg ok'; }
+    document.getElementById('checkout-form').style.display = 'none';
+    document.getElementById('checkout-form').reset();
+    document.getElementById('checkout-btn').style.display = '';
+    cart = [];
+    updateCartUI();
+  } catch (err) {
+    if (msg) { msg.textContent = 'Não foi possível registrar o pedido agora. Tente novamente em instantes.'; msg.className = 'coupon-msg err'; }
+    console.warn('Falha ao enviar pedido:', err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Confirmar Pedido';
+  }
+}
+document.getElementById('checkout-form')?.addEventListener('submit', submitOrder);
 
 // ══════════════════════
 // SCROLL REVEAL
@@ -937,7 +1044,8 @@ function initCardTilt() {
 // ══════════════════════
 // INIT
 // ══════════════════════
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadProducts();
   renderProducts();
   initReveal();
   initParallax();

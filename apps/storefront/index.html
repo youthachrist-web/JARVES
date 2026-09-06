@@ -480,6 +480,16 @@
       </svg>
       Finalizar Compra
     </button>
+    <!-- Captura de pedido (sem gateway de pagamento próprio ainda): coleta
+         contato do cliente e registra via apps/api → Supabase. A loja entra
+         em contato para confirmar pagamento/frete. Ver script.js. -->
+    <form id="checkout-form" class="checkout-form" style="display:none">
+      <input type="text" id="checkout-name" placeholder="Nome completo" autocomplete="name" required />
+      <input type="email" id="checkout-email" placeholder="E-mail" autocomplete="email" required />
+      <input type="tel" id="checkout-phone" placeholder="WhatsApp (opcional)" autocomplete="tel" />
+      <button type="submit" class="checkout-btn" id="checkout-confirm-btn">Confirmar Pedido</button>
+      <button type="button" class="checkout-cancel-btn" id="checkout-cancel">Cancelar</button>
+    </form>
     <p class="coupon-msg" id="checkout-msg" style="text-align:center"></p>
     <div class="pay-row">
       <span class="pay-lbl">Aceito:</span>
@@ -547,6 +557,10 @@
 <script>
   window.THYMOS_CONFIG = {
     nuvemshopStoreDomain: '', // ex.: 'thymos.lojavirtualnuvem.com.br' — preencher após conectar a loja
+    // apps/api em produção — serve o catálogo real (Supabase) e recebe os
+    // pedidos do checkout (ver script.js). Funciona independente da
+    // Nuvemshop estar ou não conectada.
+    apiBaseUrl: 'https://thymosapi-production.up.railway.app',
   };
 </script>
 <script src="script.js"></script>

@@ -14,6 +14,9 @@ import { captureRawBody } from './middlewares/rawBody.js'
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js'
 import type { Mailer } from './lib/mailer.js'
 import { createMailer } from './lib/mailer.js'
+import { shopRouter } from './routes/shop.js'
+import { SupabaseProductsStore, type ProductsStore } from './store/productsStore.js'
+import { SupabaseOrdersStore, type OrdersStore } from './store/ordersStore.js'
 import { logger } from './logger.js'
 
 export interface CreateAppDeps {
@@ -22,8 +25,19 @@ export interface CreateAppDeps {
   mailer?: Mailer
 }
 
+// /products e /orders (routes/shop.ts) fazem sua própria liberação de CORS
+// para qualquer origem — o storefront estático é publicado em domínios que
+// mudam (GitHub Pages, CDN, domínio próprio) e essas duas rotas não expõem
+// nada sensível nem exigem chave de admin. O middleware global de CORS
+// (restrito à allowlist de apps/admin) não deve interferir nelas.
+const PUBLIC_SHOP_PATHS = ['/products', '/orders']
+
 function corsMiddleware(allowedOrigins: string[]) {
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (PUBLIC_SHOP_PATHS.includes(req.path)) {
+      next()
+      return
+    }
     const origin = req.header('origin')
     if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin)
@@ -56,6 +70,14 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   const idempotencyStore = new InMemoryIdempotencyStore()
   const mailer = deps.mailer ?? createMailer(config.smtp)
 
+  // Catálogo/pedidos (routes/shop.ts) dependem só do Supabase — nunca da
+  // Nuvemshop estar conectada. Sem Supabase configurado, ficam null e as
+  // rotas respondem 503 com mensagem clara em vez de quebrar o boot.
+  const productsStore: ProductsStore | null =
+    config.supabaseUrl && config.supabaseServiceRoleKey ? new SupabaseProductsStore(config.supabaseUrl, config.supabaseServiceRoleKey) : null
+  const ordersStore: OrdersStore | null =
+    config.supabaseUrl && config.supabaseServiceRoleKey ? new SupabaseOrdersStore(config.supabaseUrl, config.supabaseServiceRoleKey) : null
+
   app.disable('x-powered-by')
   // Necessário para que req.protocol reflita `https` corretamente atrás do
   // proxy do Railway (a conexão interna ao container é HTTP puro; sem isso,
@@ -74,6 +96,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore, mailer }))
   app.use('/', healthRouter(config))
   app.use('/nuvemshop', nuvemshopRouter({ config, credentialsStore, eventLog }))
+  app.use('/', shopRouter({ productsStore, ordersStore, eventLog, mailer }))
 
   app.use(notFoundHandler)
   app.use(errorHandler)
