@@ -71,7 +71,22 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   // deploy deste projeto até agora, essa origem É o painel admin. Mantém o
   // app incorporado funcionando "de fábrica" sem exigir uma variável nova,
   // mas pode ser sobrescrita se algum dia isso deixar de ser verdade.
-  const adminAppUrl = env.ADMIN_APP_URL || corsAllowedOrigins[0] || null
+  //
+  // Nunca usa um valor de localhost aqui: se CORS_ALLOWED_ORIGINS ainda
+  // estiver no padrão de desenvolvimento (por falta de configuração em
+  // produção), redirecionar o iframe da Nuvemshop para localhost quebraria
+  // a tela por completo no navegador do lojista — melhor cair no fallback
+  // estático (ver routes/nuvemshop.ts) do que mandar para um endereço que
+  // não existe fora da máquina de quem está desenvolvendo.
+  const candidateAdminAppUrl = env.ADMIN_APP_URL || corsAllowedOrigins[0] || null
+  const adminAppUrl =
+    candidateAdminAppUrl && !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(candidateAdminAppUrl) ? candidateAdminAppUrl : null
+
+  if (!adminAppUrl) {
+    logger.warn(
+      'ADMIN_APP_URL não configurada (e CORS_ALLOWED_ORIGINS não aponta para uma origem pública) — o app incorporado na Nuvemshop vai usar uma página estática simples em vez do painel administrativo completo.'
+    )
+  }
 
   return {
     port: Number(env.PORT || 3000),
