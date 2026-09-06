@@ -414,9 +414,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .story-tags{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .story-tags li{font-size:.6rem;font-weight:700;letter-spacing:.06em;color:var(--nude-dark);background:var(--nude-pale);border:1px solid var(--nude-light);border-radius:20px;padding:5px 12px}
 /* Tagline em destaque — banner de texto centralizado, sem foto */
-.tagline-banner{background:var(--nude-pale);border-top:1px solid var(--beige);border-bottom:1px solid var(--beige);padding:88px 48px;text-align:center}
-.tagline-banner .split-tag{margin-bottom:14px}
-.tagline-banner .split-h{margin:0 auto;max-width:700px}
+.story-tagline .split-info{justify-content:center}
 /* Bloco final de Tecnologia Sustentável — centralizado, fora do grid de
    2 colunas por vir sozinho na sequência do manual */
 .story-tech{max-width:640px;margin:0 auto;text-align:center;padding:36px 32px;background:var(--off-white);border:1.5px solid var(--beige);border-radius:6px}
@@ -611,9 +609,11 @@ details.modal-details summary:hover{color:var(--nude)}
 .bv-item{border-radius:4px;overflow:hidden}
 .bv-in{width:100%;transition:transform .5s var(--ease)}
 .bv-item:hover .bv-in{transform:scale(1.03)}
-.bv-1 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c4cbb9,#aeb8a0)}
-.bv-2 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c0c8b5,#aeb8a0);margin-top:30px}
-.bv-3 .bv-in{aspect-ratio:1/.7;background:linear-gradient(160deg,#d2d6cc,#c0c8b5)}
+.bv-photo{object-fit:cover;width:100%;height:100%;display:block}
+.bv-photo-1{aspect-ratio:1/1.4}
+.bv-offset{margin-top:30px}
+.bv-photo-2{aspect-ratio:1/1.4}
+.bv-photo-3{aspect-ratio:1/.7}
 .bv-4{display:flex;align-items:center;justify-content:center;border:1.5px solid var(--nude-light);background:var(--nude-pale);border-radius:4px}
 .bv-text{text-align:center;padding:20px}
 .bv-num{display:block;font-family:var(--font-display);font-size:2.3rem;color:var(--nude-dark);letter-spacing:.05em}
