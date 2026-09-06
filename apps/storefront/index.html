@@ -331,10 +331,10 @@
     <p>Esculpida para a força. Mergulhada na escuridão.<br/>Nossa temporada mais poderosa até agora.</p>
     <div class="coll-btns">
       <a href="#products" class="btn-nude">Comprar a Coleção</a>
-      <a href="#" class="btn-ghost-white">Ver Lookbook</a>
+      <a href="#coll-showcase" class="btn-ghost-white">Ver Lookbook</a>
     </div>
   </div>
-  <div class="coll-showcase">
+  <div class="coll-showcase" id="coll-showcase">
     <div class="show-item reveal" data-delay="0">
       <div class="show-img">
         <!-- ✅ <img src="imagens/colecao/onyx-conjunto.jpg" alt="Conjunto Onyx"> -->
@@ -374,13 +374,24 @@
       <a href="#brand-story" class="btn-dark">Nossa História</a>
     </div>
     <div class="bm-right reveal">
+      <!-- Galeria com as fotos reais da marca — estrutura de mosaico,
+           não decoração solta: 5 fotos + o card de fundação. -->
       <div class="bm-viz">
-        <!-- ✅ Substitua os divs coloridos por <img> reais -->
         <div class="bv-item">
           <img class="bv-in bv-photo" src="assets/lifestyle/thymos-lifestyle-tanktop-logo.jpg" alt="Regata Thymos com a wordmark oficial"/>
         </div>
-        <div class="bv-item"><div class="bv-in bv-2"></div></div>
-        <div class="bv-item"><div class="bv-in bv-3"></div></div>
+        <div class="bv-item bv-offset">
+          <img class="bv-in bv-photo" src="assets/lifestyle/thymos-lifestyle-sportsbra.jpg" alt="Detalhe do top esportivo Thymos"/>
+        </div>
+        <div class="bv-item">
+          <img class="bv-in bv-photo" src="assets/lifestyle/thymos-fabric-texture.jpg" alt="Textura do tecido de alta performance Thymos"/>
+        </div>
+        <div class="bv-item bv-offset">
+          <img class="bv-in bv-photo" src="assets/lifestyle/thymos-lifestyle-hoodie.jpg" alt="Detalhe do moletom Thymos"/>
+        </div>
+        <div class="bv-item">
+          <img class="bv-in bv-photo" src="assets/lifestyle/thymos-lifestyle-flatlay.jpg" alt="Acessórios Thymos — bolsa, boné e squeeze"/>
+        </div>
         <div class="bv-item bv-4">
           <div class="bv-text"><span class="bv-num">2019</span><span class="bv-lbl">Fundação</span></div>
         </div>
@@ -553,21 +564,18 @@
         <a href="https://www.instagram.com/thymosoficial" target="_blank" rel="noopener noreferrer" class="soc-btn" aria-label="Instagram">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
         </a>
-        <a href="#" class="soc-btn" aria-label="TikTok">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg>
-        </a>
-        <a href="#" class="soc-btn" aria-label="YouTube">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
-        </a>
-        <a href="#" class="soc-btn" aria-label="Pinterest">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.428 1.808-2.428.852 0 1.265.64 1.265 1.408 0 .858-.546 2.14-.828 3.33-.236.995.499 1.806 1.476 1.806 1.772 0 3.137-1.868 3.137-4.568 0-2.387-1.716-4.057-4.165-4.057-2.837 0-4.502 2.126-4.502 4.326 0 .856.33 1.773.741 2.274a.3.3 0 01.069.284c-.076.315-.245.995-.278 1.134-.044.183-.145.222-.334.134-1.249-.581-2.03-2.407-2.03-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.22-5.19 6.22-1.013 0-1.966-.527-2.292-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.522 0 10-4.477 10-10S17.522 2 12 2z"/></svg>
-        </a>
       </div>
+      <!-- Só o Instagram tem conta real hoje — sem ícones de TikTok/YouTube/
+           Pinterest levando a lugar nenhum (href="#" morto). Quando essas
+           contas existirem, é só adicionar de volta com o link real. -->
     </div>
     <div class="footer-nav-cols">
-      <div class="f-col"><h4>Loja</h4><ul><li><a href="#">Leggings</a></li><li><a href="#">Top Esportivo</a></li><li><a href="#">Camisetas Oversized</a></li><li><a href="#">Shorts</a></li><li><a href="#">Acessórios</a></li></ul></div>
-      <div class="f-col"><h4>Informações</h4><ul><li><a href="#about">Sobre Nós</a></li><li><a href="#">Guia de Tamanhos</a></li><li><a href="#brand-story">Sustentabilidade</a></li><li><a href="#">Embaixadoras</a></li><li><a href="#">Blog</a></li></ul></div>
-      <div class="f-col"><h4>Atendimento</h4><ul><li><a href="#">Perguntas Frequentes</a></li><li><a href="#">Frete e Trocas</a></li><li><a href="#">Rastrear Pedido</a></li><li><a href="#">Fale Conosco</a></li><li><a href="#">Privacidade</a></li></ul></div>
+      <!-- Ainda não há filtro por categoria — todos os itens da loja ficam
+           num único grid (#products). Os links abaixo levam pra lá em vez
+           de simular uma categoria que não existe de verdade. -->
+      <div class="f-col"><h4>Loja</h4><ul><li><a href="#products">Leggings</a></li><li><a href="#products">Top Esportivo</a></li><li><a href="#products">Camisetas Oversized</a></li><li><a href="#products">Shorts</a></li><li><a href="#products">Acessórios</a></li></ul></div>
+      <div class="f-col"><h4>Informações</h4><ul><li><a href="#about">Sobre Nós</a></li><li><a href="#" onclick="openInfoModal('sizes');return false;">Guia de Tamanhos</a></li><li><a href="#brand-story">Sustentabilidade</a></li><li><a href="mailto:contato@thymosfit.com.br?subject=Programa%20de%20Embaixadoras">Embaixadoras</a></li><li><a href="https://www.instagram.com/thymosoficial" target="_blank" rel="noopener noreferrer">Blog</a></li></ul></div>
+      <div class="f-col"><h4>Atendimento</h4><ul><li><a href="#" onclick="openInfoModal('faq');return false;">Perguntas Frequentes</a></li><li><a href="#" onclick="openInfoModal('shipping');return false;">Frete e Trocas</a></li><li><a href="#" onclick="openInfoModal('tracking');return false;">Rastrear Pedido</a></li><li><a href="mailto:contato@thymosfit.com.br">Fale Conosco</a></li><li><a href="#" onclick="openInfoModal('privacy');return false;">Privacidade</a></li></ul></div>
     </div>
     <div class="f-news">
       <h4>Fique por dentro</h4>
@@ -611,7 +619,15 @@ function closeWelcome(){
   setTimeout(()=>o.remove(),400);
   sessionStorage.setItem('wbClosed','1');
 }
-function handleWbForm(e){e.preventDefault();closeWelcome();}
+function handleWbForm(e){
+  e.preventDefault();
+  // Ativa de fato o cupão THYMOS10 anunciado no popup — antes só fechava a
+  // caixa sem aplicar nada. cartDiscount/updateCartUI vêm de script.js
+  // (mesmo escopo global de módulo clássico do documento).
+  cartDiscount = 0.10;
+  updateCartUI();
+  closeWelcome();
+}
 window.closeWelcome=closeWelcome;window.handleWbForm=handleWbForm;
 document.addEventListener('DOMContentLoaded',()=>{
   if(!sessionStorage.getItem('wbClosed')){

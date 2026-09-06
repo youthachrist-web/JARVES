@@ -475,7 +475,7 @@ function openModal(productId) {
           <div class="modal-sec">
             <div class="modal-sec-title">
               Tamanho
-              <a href="#" class="modal-size-guide" onclick="return false">Guia de tamanhos →</a>
+              <a href="#" class="modal-size-guide" onclick="openInfoModal('sizes');return false;">Guia de tamanhos →</a>
             </div>
             <div class="sizes-row" id="modal-sizes-${p.id}">${sizesHtml}</div>
             <div class="modal-hint" id="size-hint-${p.id}" style="display:none">
@@ -588,6 +588,108 @@ function closeModal() {
   setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
 }
 function handleEsc(e) { if (e.key === 'Escape') closeModal(); }
+
+// ══════════════════════
+// MODAL DE INFORMAÇÕES (Guia de Tamanhos, FAQ, Frete e Trocas,
+// Rastrear Pedido, Privacidade) — conteúdo real, reaproveitando a mesma
+// estrutura visual do modal de produto (.prod-modal/.modal-box) para não
+// duplicar CSS. Nenhum destes links fica mais "morto" (href="#" sem ação).
+// ══════════════════════
+const INFO_MODAL_CONTENT = {
+  sizes: {
+    title: 'Guia de Tamanhos',
+    body: `
+      <p class="modal-desc">Medidas aproximadas em centímetros. Em caso de dúvida entre dois tamanhos, recomendamos o maior — nossos tecidos compressivos ajustam ao corpo.</p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead><tr style="border-bottom:1.5px solid var(--beige)">
+            <th style="text-align:left;padding:8px 6px;color:var(--gray-300);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">Tamanho</th>
+            <th style="text-align:left;padding:8px 6px;color:var(--gray-300);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">Busto</th>
+            <th style="text-align:left;padding:8px 6px;color:var(--gray-300);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">Cintura</th>
+            <th style="text-align:left;padding:8px 6px;color:var(--gray-300);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">Quadril</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">PP</td><td style="padding:8px 6px">78–82</td><td style="padding:8px 6px">60–64</td><td style="padding:8px 6px">86–90</td></tr>
+            <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">P</td><td style="padding:8px 6px">83–87</td><td style="padding:8px 6px">65–69</td><td style="padding:8px 6px">91–95</td></tr>
+            <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">M</td><td style="padding:8px 6px">88–93</td><td style="padding:8px 6px">70–75</td><td style="padding:8px 6px">96–101</td></tr>
+            <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">G</td><td style="padding:8px 6px">94–99</td><td style="padding:8px 6px">76–81</td><td style="padding:8px 6px">102–107</td></tr>
+            <tr><td style="padding:8px 6px;font-weight:700">GG</td><td style="padding:8px 6px">100–106</td><td style="padding:8px 6px">82–88</td><td style="padding:8px 6px">108–114</td></tr>
+          </tbody>
+        </table>
+      </div>`,
+  },
+  faq: {
+    title: 'Perguntas Frequentes',
+    body: `
+      <details class="modal-details" open><summary>Quais as formas de pagamento?</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Pix, cartão de crédito (em até 3x sem juros) e boleto bancário.</p></details>
+      <details class="modal-details"><summary>Qual o prazo de entrega?</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Normalmente entre 3 e 10 dias úteis, conforme a região, contados a partir da confirmação do pagamento.</p></details>
+      <details class="modal-details"><summary>Como funciona a troca?</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Gratuita em até 30 dias corridos após o recebimento, para peças sem uso, com etiqueta e nota fiscal.</p></details>
+      <details class="modal-details"><summary>Tem frete grátis?</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Sim, em compras acima de R$${FREE_SHIPPING} para todo o Brasil.</p></details>
+      <details class="modal-details"><summary>Como acompanho meu pedido?</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Assim que o pagamento é confirmado, enviamos o código de rastreio por e-mail e WhatsApp.</p></details>`,
+  },
+  shipping: {
+    title: 'Frete e Trocas',
+    body: `
+      <p class="modal-desc"><strong>Frete:</strong> grátis acima de R$${FREE_SHIPPING}; abaixo disso, calculado conforme o CEP no fechamento do pedido. Prazo estimado de 3 a 10 dias úteis após a confirmação do pagamento.</p>
+      <p class="modal-desc"><strong>Trocas:</strong> gratuitas em até 30 dias corridos após o recebimento, para peças sem uso, com etiqueta e nota fiscal.</p>
+      <p class="modal-desc" style="border:none"><strong>Reembolsos:</strong> processados em até 10 dias úteis após o recebimento do produto devolvido em nosso centro de distribuição.</p>`,
+  },
+  tracking: {
+    title: 'Rastrear Pedido',
+    body: `
+      <p class="modal-desc">Assim que confirmamos o pagamento do seu pedido, enviamos por e-mail e WhatsApp o código de rastreio e o prazo estimado de entrega.</p>
+      <p class="modal-desc" style="border:none">Já finalizou uma compra e ainda não recebeu essas informações? Fale com a gente pelo <a href="mailto:contato@thymosfit.com.br?subject=Rastrear%20pedido" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a> informando o nome usado no pedido.</p>`,
+  },
+  privacy: {
+    title: 'Privacidade',
+    body: `
+      <p class="modal-desc">Coletamos apenas os dados necessários para processar seu pedido e atendimento: nome, e-mail, telefone e endereço de entrega. Não vendemos nem compartilhamos seus dados com terceiros para fins comerciais.</p>
+      <p class="modal-desc">Usamos seu e-mail para comunicações sobre pedidos e, com seu consentimento explícito (cadastro na newsletter), para novidades e promoções — você pode cancelar a qualquer momento.</p>
+      <p class="modal-desc" style="border:none">Nos termos da LGPD, você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento pelo <a href="mailto:contato@thymosfit.com.br?subject=Privacidade%20de%20dados" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p>`,
+  },
+};
+
+function openInfoModal(kind) {
+  const data = INFO_MODAL_CONTENT[kind];
+  if (!data) return;
+  document.getElementById('info-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'info-modal';
+  modal.className = 'prod-modal';
+  modal.innerHTML = `
+    <div class="modal-scrim" id="info-modal-overlay"></div>
+    <div class="modal-box" style="max-width:560px">
+      <button class="modal-x" id="info-modal-close" aria-label="Fechar">✕</button>
+      <div class="modal-info" style="padding:34px 30px">
+        <h2 class="modal-name" style="margin-bottom:16px">${data.title}</h2>
+        ${data.body}
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => modal.classList.add('open'));
+
+  modal.querySelector('#info-modal-overlay').addEventListener('click', closeInfoModal);
+  modal.querySelector('#info-modal-close').addEventListener('click', closeInfoModal);
+  document.addEventListener('keydown', handleInfoEsc);
+}
+window.openInfoModal = openInfoModal;
+
+function closeInfoModal() {
+  const modal = document.getElementById('info-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.removeEventListener('keydown', handleInfoEsc);
+  setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
+}
+function handleInfoEsc(e) { if (e.key === 'Escape') closeInfoModal(); }
 
 function selectSize(btn) {
   btn.closest('.sizes-row').querySelectorAll('.size-btn').forEach(b => b.classList.remove('on'));
@@ -1010,6 +1112,15 @@ document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click
   if (href === '#') return;
   const t = document.querySelector(href);
   if (t) { e.preventDefault(); window.scrollTo({top: t.getBoundingClientRect().top + window.scrollY - 70, behavior:'smooth'}); }
+}));
+
+// Cards de categoria, itens do showcase da Coleção Onyx e da galeria trio
+// têm cursor:pointer (CSS já sinaliza "clicável") mas nenhum handler —
+// como ainda não existe navegação por categoria/look individual, todos
+// levam para a vitrine (#products) em vez de parecer clicável e não fazer
+// nada ao clicar.
+document.querySelectorAll('.cat-card, .show-item, .trio-item').forEach(card => card.addEventListener('click', () => {
+  document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }));
 
 // ══════════════════════
