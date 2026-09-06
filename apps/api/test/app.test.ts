@@ -109,6 +109,11 @@ describe('GET /nuvemshop/callback', () => {
     expect(res.status).toBe(200)
     expect(res.headers['content-type']).toMatch(/text\/html/)
     expect(res.text).toMatch(/Conectar agora/)
+    // A Nuvemshop só considera o app "incorporado" carregado quando ele
+    // chama iAmReady() via Nexo — sem isso, o admin mostra "Ocorreu um erro
+    // com o aplicativo" mesmo com a página respondendo 200 normalmente.
+    expect(res.text).toMatch(/@tiendanube\/nexo/)
+    expect(res.text).toMatch(/iAmReady/)
   })
 
   it('mostra a página de "conectado" quando aberto sem parâmetros e a loja já está conectada', async () => {

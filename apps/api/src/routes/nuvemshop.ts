@@ -17,11 +17,28 @@ function unavailable(res: import('express').Response, reason: string) {
   res.status(503).json({ error: `Integração Nuvemshop indisponível: ${reason}` })
 }
 
-function renderPage(title: string, bodyHtml: string): string {
+/**
+ * Renderiza uma página HTML simples para as telas de OAuth (conectar,
+ * conectado, etc). Inclui o handshake do Nexo, o SDK oficial da Nuvemshop
+ * para "apps incorporados": quando esta página é carregada dentro do iframe
+ * do admin da loja, o admin espera receber a notificação `iAmReady()` via
+ * Nexo — sem ela, mostra "Ocorreu um erro com o aplicativo" mesmo que a
+ * página em si tenha carregado normalmente (200, HTML válido). Fora de um
+ * iframe da Nuvemshop (acesso direto pelo navegador), o `connect()` do Nexo
+ * simplesmente nunca resolve e o try/catch abaixo garante que isso não
+ * afete a exibição do conteúdo visível da página.
+ */
+function renderPage(title: string, bodyHtml: string, appId: string): string {
   return (
     `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Thymos — ${title}</title></head>` +
     `<body style="font-family:sans-serif;background:#324d3e;color:#f5f2ea;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">` +
-    `<div style="text-align:center;padding:2rem">${bodyHtml}</div></body></html>`
+    `<div style="text-align:center;padding:2rem">${bodyHtml}</div>` +
+    `<script type="module">` +
+    `import Nexo from "https://cdn.jsdelivr.net/npm/@tiendanube/nexo@1.3.1/+esm";` +
+    `try { const nexo = Nexo.create({ clientId: "${appId}" }); Nexo.connect(nexo).then(() => Nexo.iAmReady(nexo)); }` +
+    `catch (e) { /* não está embutido no admin da Nuvemshop — ignora */ }` +
+    `</script>` +
+    `</body></html>`
   )
 }
 
@@ -74,13 +91,14 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       const creds = await credentialsStore.load().catch(() => null)
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
       if (creds) {
-        res.status(200).send(renderPage('Conectado', `<h1>✓ Thymos conectado</h1><p>Loja ID: ${creds.storeId}</p>`))
+        res.status(200).send(renderPage('Conectado', `<h1>✓ Thymos conectado</h1><p>Loja ID: ${creds.storeId}</p>`, config.nuvemshop.appId))
       } else {
         res.status(200).send(
           renderPage(
             'Conectar loja',
             `<h1>Thymos</h1><p>A loja ainda não está conectada.</p>` +
-              `<p><a href="/nuvemshop/connect" style="color:#f5f2ea;background:#5f7a68;padding:0.75rem 1.5rem;border-radius:6px;text-decoration:none;display:inline-block;margin-top:1rem">Conectar agora</a></p>`
+              `<p><a href="/nuvemshop/connect" style="color:#f5f2ea;background:#5f7a68;padding:0.75rem 1.5rem;border-radius:6px;text-decoration:none;display:inline-block;margin-top:1rem">Conectar agora</a></p>`,
+            config.nuvemshop.appId
           )
         )
       }
@@ -110,7 +128,7 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja conectada com sucesso', detail: { storeId } })
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
-      res.status(200).send(renderPage('Conectado', `<h1>✓ Nuvemshop conectada</h1><p>Loja ID: ${storeId}</p>`))
+      res.status(200).send(renderPage('Conectado', `<h1>✓ Nuvemshop conectada</h1><p>Loja ID: ${storeId}</p>`, config.nuvemshop.appId))
     } catch (err) {
       logger.error('Falha ao trocar code por access_token', { message: (err as Error).message })
       await eventLog.record({ level: 'error', category: 'oauth', message: 'Falha ao trocar code por access_token', detail: { error: (err as Error).message } })
