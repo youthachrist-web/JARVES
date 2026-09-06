@@ -432,10 +432,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .testi-stars{color:var(--nude);font-size:.72rem;letter-spacing:2px;margin-bottom:12px}
 .testi-text{font-size:.83rem;color:var(--gray-500);line-height:1.8;font-weight:300;margin-bottom:22px;font-style:italic;position:relative;z-index:1}
 .testi-author{display:flex;align-items:center;gap:11px}
-.testi-av{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--beige);flex-shrink:0}
-.av1{background:linear-gradient(135deg,#c4cbb9,#aeb8a0)}
-.av2{background:linear-gradient(135deg,#c0c8b5,#adb69f)}
-.av3{background:linear-gradient(135deg,#c6ccbc,#b6bfaa)}
+.testi-av{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--beige);flex-shrink:0;object-fit:cover;object-position:top center;display:block}
 .testi-author strong{display:block;font-size:.72rem;font-weight:700;letter-spacing:.04em;color:var(--gray-700);text-transform:uppercase;margin-bottom:1px}
 .testi-author span{font-size:.58rem;color:var(--nude);letter-spacing:.1em;text-transform:uppercase}
 
