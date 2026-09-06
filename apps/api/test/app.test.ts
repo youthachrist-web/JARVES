@@ -18,6 +18,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     supabaseAnonKey: null,
     supabaseServiceRoleKey: null,
     smtp: null,
+    adminAppUrl: null,
     nuvemshop: {
       appId: '32653',
       appSecret: APP_SECRET,
@@ -124,6 +125,28 @@ describe('GET /nuvemshop/callback', () => {
     expect(res.status).toBe(200)
     expect(res.text).toMatch(/Thymos conectado/)
     expect(res.text).toMatch(/999/)
+  })
+
+  it('encaminha (302) para o painel administrativo de verdade quando ADMIN_APP_URL está configurado — caso conectado', async () => {
+    // O painel (apps/admin) já sabe mostrar tanto o estado conectado quanto
+    // o não conectado (aba Integrações tem o botão "Conectar loja"), então
+    // a Nuvemshop deve carregar o painel de verdade dentro do iframe em vez
+    // de uma página estática própria.
+    const credentialsStore = new InMemoryCredentialsStore()
+    await credentialsStore.save({ storeId: '999', accessToken: 'tok', connectedAt: new Date().toISOString() })
+    const app = createApp(baseConfig({ adminAppUrl: 'https://thymosadmin-production.up.railway.app' }), { credentialsStore })
+    const res = await request(app).get('/nuvemshop/callback')
+    expect(res.status).toBe(302)
+    expect(res.headers.location).toBe('https://thymosadmin-production.up.railway.app/?embedded=1&appId=32653')
+  })
+
+  it('encaminha (302) para o painel administrativo mesmo sem a loja estar conectada ainda', async () => {
+    const app = createApp(baseConfig({ adminAppUrl: 'https://thymosadmin-production.up.railway.app' }), {
+      credentialsStore: new InMemoryCredentialsStore(),
+    })
+    const res = await request(app).get('/nuvemshop/callback')
+    expect(res.status).toBe(302)
+    expect(res.headers.location).toBe('https://thymosadmin-production.up.railway.app/?embedded=1&appId=32653')
   })
 })
 

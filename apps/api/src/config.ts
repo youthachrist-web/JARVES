@@ -20,6 +20,10 @@ export interface AppConfig {
   supabaseServiceRoleKey: string | null
   nuvemshop: NuvemshopEnvConfig | null
   smtp: SmtpConfig | null
+  /** URL pública de `apps/admin` (o painel administrativo React). Usada para
+   * encaminhar o "app incorporado" da Nuvemshop para o painel de verdade em
+   * vez de uma página estática — ver routes/nuvemshop.ts. */
+  adminAppUrl: string | null
 }
 
 /**
@@ -58,17 +62,26 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     )
   }
 
+  const corsAllowedOrigins = (env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  // Sem ADMIN_APP_URL explícita, assume a primeira origem de CORS — em todo
+  // deploy deste projeto até agora, essa origem É o painel admin. Mantém o
+  // app incorporado funcionando "de fábrica" sem exigir uma variável nova,
+  // mas pode ser sobrescrita se algum dia isso deixar de ser verdade.
+  const adminAppUrl = env.ADMIN_APP_URL || corsAllowedOrigins[0] || null
+
   return {
     port: Number(env.PORT || 3000),
-    corsAllowedOrigins: (env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
+    corsAllowedOrigins,
     sessionSecret: env.SESSION_SECRET || null,
     supabaseUrl,
     supabaseAnonKey,
     supabaseServiceRoleKey,
     nuvemshop,
     smtp,
+    adminAppUrl,
   }
 }

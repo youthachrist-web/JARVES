@@ -85,9 +85,20 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
     // o lojista abre o app já instalado — sem NENHUM parâmetro de OAuth. Sem
     // este caso especial, isso caía na validação de `state` abaixo e
     // retornava um JSON de erro 400, que a Nuvemshop exibe como "Ocorreu um
-    // erro com o aplicativo" (era a causa raiz do erro reportado). Aqui,
-    // mostra uma página HTML amigável em vez de tratar como falha de OAuth.
+    // erro com o aplicativo" (era a causa raiz do erro reportado).
+    //
+    // Em vez de mostrar uma página estática própria, encaminha para o painel
+    // administrativo de verdade (apps/admin — Dashboard/Integrações/Logs/
+    // Configurações), que já lida bem tanto com "conectado" quanto com "não
+    // conectado" (mostra o botão "Conectar loja" na aba Integrações). Isso é
+    // o que aparece de fato dentro do admin da Nuvemshop ao abrir o app.
     if (!code && !state) {
+      if (config.adminAppUrl) {
+        res.redirect(302, `${config.adminAppUrl}/?embedded=1&appId=${encodeURIComponent(config.nuvemshop.appId)}`)
+        return
+      }
+      // Fallback só usado se ADMIN_APP_URL/CORS_ALLOWED_ORIGINS não estiver
+      // configurado — nunca deixa a tela quebrada mesmo faltando essa var.
       const creds = await credentialsStore.load().catch(() => null)
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
       if (creds) {
@@ -127,6 +138,10 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       })
       await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja conectada com sucesso', detail: { storeId } })
 
+      if (config.adminAppUrl) {
+        res.redirect(302, `${config.adminAppUrl}/?embedded=1&appId=${encodeURIComponent(config.nuvemshop.appId)}&justConnected=1`)
+        return
+      }
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
       res.status(200).send(renderPage('Conectado', `<h1>✓ Nuvemshop conectada</h1><p>Loja ID: ${storeId}</p>`, config.nuvemshop.appId))
     } catch (err) {
