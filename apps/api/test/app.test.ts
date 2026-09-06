@@ -97,6 +97,29 @@ describe('GET /nuvemshop/callback', () => {
     const res = await request(app).get('/nuvemshop/callback?code=abc&state=estado-forjado.assinatura-errada')
     expect(res.status).toBe(400)
   })
+
+  it('mostra uma página HTML amigável (não erro) quando aberto sem nenhum parâmetro — caso do iframe embutido no admin da loja', async () => {
+    // Regressão: a Nuvemshop carrega esta mesma URL ("Site do aplicativo")
+    // dentro do admin da loja sempre que o lojista abre o app já instalado,
+    // sem parâmetros de OAuth. Antes disso, caía na validação de `state` e
+    // retornava 400 — a Nuvemshop exibia isso como "Ocorreu um erro com o
+    // aplicativo".
+    const app = createApp(baseConfig(), { credentialsStore: new InMemoryCredentialsStore() })
+    const res = await request(app).get('/nuvemshop/callback')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/text\/html/)
+    expect(res.text).toMatch(/Conectar agora/)
+  })
+
+  it('mostra a página de "conectado" quando aberto sem parâmetros e a loja já está conectada', async () => {
+    const credentialsStore = new InMemoryCredentialsStore()
+    await credentialsStore.save({ storeId: '999', accessToken: 'tok', connectedAt: new Date().toISOString() })
+    const app = createApp(baseConfig(), { credentialsStore })
+    const res = await request(app).get('/nuvemshop/callback')
+    expect(res.status).toBe(200)
+    expect(res.text).toMatch(/Thymos conectado/)
+    expect(res.text).toMatch(/999/)
+  })
 })
 
 describe('POST /nuvemshop/sync/products — proteção por API key', () => {

@@ -17,6 +17,14 @@ function unavailable(res: import('express').Response, reason: string) {
   res.status(503).json({ error: `Integração Nuvemshop indisponível: ${reason}` })
 }
 
+function renderPage(title: string, bodyHtml: string): string {
+  return (
+    `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Thymos — ${title}</title></head>` +
+    `<body style="font-family:sans-serif;background:#324d3e;color:#f5f2ea;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">` +
+    `<div style="text-align:center;padding:2rem">${bodyHtml}</div></body></html>`
+  )
+}
+
 export function nuvemshopRouter({ config, credentialsStore, eventLog }: NuvemshopRouterDeps): Router {
   const router = Router()
   const adminAuth = requireApiKey(config.sessionSecret)
@@ -55,6 +63,30 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
     const code = req.query.code as string | undefined
     const state = req.query.state as string | undefined
 
+    // A mesma URL cadastrada como "Site do aplicativo" no Painel de Parceiros
+    // é carregada pela Nuvemshop dentro do iframe do admin da loja sempre que
+    // o lojista abre o app já instalado — sem NENHUM parâmetro de OAuth. Sem
+    // este caso especial, isso caía na validação de `state` abaixo e
+    // retornava um JSON de erro 400, que a Nuvemshop exibe como "Ocorreu um
+    // erro com o aplicativo" (era a causa raiz do erro reportado). Aqui,
+    // mostra uma página HTML amigável em vez de tratar como falha de OAuth.
+    if (!code && !state) {
+      const creds = await credentialsStore.load().catch(() => null)
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      if (creds) {
+        res.status(200).send(renderPage('Conectado', `<h1>✓ Thymos conectado</h1><p>Loja ID: ${creds.storeId}</p>`))
+      } else {
+        res.status(200).send(
+          renderPage(
+            'Conectar loja',
+            `<h1>Thymos</h1><p>A loja ainda não está conectada.</p>` +
+              `<p><a href="/nuvemshop/connect" style="color:#f5f2ea;background:#5f7a68;padding:0.75rem 1.5rem;border-radius:6px;text-decoration:none;display:inline-block;margin-top:1rem">Conectar agora</a></p>`
+          )
+        )
+      }
+      return
+    }
+
     if (!verifyOAuthState(state, config.sessionSecret)) {
       await eventLog.record({ level: 'warn', category: 'oauth', message: 'Callback OAuth rejeitado: state inválido/expirado (possível CSRF)' })
       res.status(400).json({ error: 'Parâmetro state inválido ou expirado. Reinicie a conexão em /nuvemshop/connect.' })
@@ -78,11 +110,7 @@ export function nuvemshopRouter({ config, credentialsStore, eventLog }: Nuvemsho
       await eventLog.record({ level: 'info', category: 'oauth', message: 'Loja conectada com sucesso', detail: { storeId } })
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
-      res.status(200).send(
-        `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Thymos — Conectado</title></head>` +
-          `<body style="font-family:sans-serif;background:#324d3e;color:#f5f2ea;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">` +
-          `<div style="text-align:center;padding:2rem"><h1>✓ Nuvemshop conectada</h1><p>Loja ID: ${storeId}</p></div></body></html>`
-      )
+      res.status(200).send(renderPage('Conectado', `<h1>✓ Nuvemshop conectada</h1><p>Loja ID: ${storeId}</p>`))
     } catch (err) {
       logger.error('Falha ao trocar code por access_token', { message: (err as Error).message })
       await eventLog.record({ level: 'error', category: 'oauth', message: 'Falha ao trocar code por access_token', detail: { error: (err as Error).message } })
