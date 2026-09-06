@@ -330,32 +330,17 @@
     <p>Esculpida para a força. Mergulhada na escuridão.<br/>Nossa temporada mais poderosa até agora.</p>
     <div class="coll-btns">
       <a href="#products" class="btn-nude">Comprar a Coleção</a>
-      <a href="#coll-showcase" class="btn-ghost-white">Ver Lookbook</a>
+      <a href="#coll-showcase" class="btn-ghost-white">Ver Todas as Coleções</a>
     </div>
   </div>
-  <div class="coll-showcase" id="coll-showcase">
-    <div class="show-item reveal" data-delay="0">
-      <div class="show-img">
-        <img src="assets/products/conjunto-onyx-power-1.jpg" alt="Conjunto Onyx" loading="lazy" decoding="async"/>
-      </div>
-      <div class="show-name">Conjunto Onyx</div>
-      <div class="show-price">R$349</div>
-    </div>
-    <div class="show-item reveal" data-delay="100">
-      <div class="show-img">
-        <img src="assets/lifestyle/thymos-lifestyle-tanktop-logo.jpg" alt="Top Power" loading="lazy" decoding="async"/>
-      </div>
-      <div class="show-name">Top Power</div>
-      <div class="show-price">R$179</div>
-    </div>
-    <div class="show-item reveal" data-delay="200">
-      <div class="show-img">
-        <img src="assets/lifestyle/thymos-lifestyle-hoodie.jpg" alt="Legging Sculpt" loading="lazy" decoding="async"/>
-      </div>
-      <div class="show-name">Legging Sculpt</div>
-      <div class="show-price">R$249</div>
-    </div>
+  <div class="coll-showcase-head reveal">
+    <span class="sec-tag" style="color:var(--nude-light)">CATÁLOGO COMPLETO</span>
+    <h3 class="coll-showcase-h">Todas as <em>Coleções</em></h3>
   </div>
+  <!-- Populado dinamicamente por renderCollectionsShowcase() em script.js a
+       partir do catálogo real (GET /products) — cada coleção/produto listado
+       aqui é real (nome, foto e preço vindos do Supabase), nunca placeholder. -->
+  <div class="coll-showcase" id="coll-showcase"></div>
 </section>
 
 <!-- ═══════════════════════════════════════════
