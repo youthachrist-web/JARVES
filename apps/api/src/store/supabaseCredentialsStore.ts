@@ -31,7 +31,16 @@ export class SupabaseCredentialsStore implements CredentialsStore {
 
   async save(creds: StoredNuvemshopCredentials): Promise<void> {
     const upsert = async (chave: string, valor: string) => {
-      const res = await this.fetchImpl(`${this.supabaseUrl}/rest/v1/configuracoes`, {
+      // `Prefer: resolution=merge-duplicates` sozinho NÃO faz o PostgREST
+      // tratar isto como upsert — é preciso informar explicitamente qual
+      // coluna é o alvo do conflito via `?on_conflict=chave` na URL. Sem
+      // isso, a primeira gravação de cada chave funciona (INSERT puro), mas
+      // toda atualização seguinte falha com 409 "duplicate key value
+      // violates unique constraint" — e como ResilientCredentialsStore
+      // engole esse erro (para nunca travar a conexão), o sintoma era uma
+      // credencial "presa" na primeira loja conectada, nunca atualizada em
+      // reconexões futuras, sem nenhum aviso visível além do log.
+      const res = await this.fetchImpl(`${this.supabaseUrl}/rest/v1/configuracoes?on_conflict=chave`, {
         method: 'POST',
         headers: this.headers({ Prefer: 'resolution=merge-duplicates' }),
         body: JSON.stringify({ chave, valor, atualizado_em: creds.connectedAt }),
