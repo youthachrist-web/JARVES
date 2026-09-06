@@ -808,6 +808,40 @@ function renderProducts() {
   updateCTAButton();
 }
 
+// ══════════════════════
+// RENDERIZAR "TODAS AS COLEÇÕES" (seção #collection)
+// ══════════════════════
+// Lista TODAS as coleções/produtos reais do catálogo (mesmo array `products`
+// já carregado do Supabase por loadProducts()) como cards de lookbook —
+// nunca itens fictícios/placeholder. Clicar em qualquer card abre o modal
+// completo do produto (mesmo openModal() usado na vitrine principal).
+function renderCollectionsShowcase() {
+  const showcase = document.getElementById('coll-showcase');
+  if (!showcase) return;
+  showcase.innerHTML = '';
+  const delays = [0, 100, 150, 200, 250, 300];
+
+  products.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'show-item reveal';
+    item.setAttribute('data-delay', String(delays[i % delays.length]));
+
+    const hasImg = p.images && p.images.length > 0;
+    const imgHtml = hasImg
+      ? `<img src="${p.images[0]}" alt="${p.name}" loading="lazy" decoding="async"/>`
+      : `<div class="show-img-fill"></div>`;
+    const oldPriceHtml = p.oldPrice ? `<span class="show-old">R$${p.oldPrice}</span>` : '';
+
+    item.innerHTML = `
+      <div class="show-img">${imgHtml}</div>
+      <div class="show-cat">${p.category}</div>
+      <div class="show-name">${p.name}</div>
+      <div class="show-price">R$${p.price}${oldPriceHtml}</div>`;
+    item.addEventListener('click', () => openModal(p.id));
+    showcase.appendChild(item);
+  });
+}
+
 function toggleProducts() {
   const btn = document.getElementById('toggle-products-btn');
   if (!showingAll) {
@@ -1130,12 +1164,13 @@ document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click
   if (t) { e.preventDefault(); window.scrollTo({top: t.getBoundingClientRect().top + window.scrollY - 70, behavior:'smooth'}); }
 }));
 
-// Cards de categoria, itens do showcase da Coleção Onyx e da galeria trio
-// têm cursor:pointer (CSS já sinaliza "clicável") mas nenhum handler —
-// como ainda não existe navegação por categoria/look individual, todos
-// levam para a vitrine (#products) em vez de parecer clicável e não fazer
-// nada ao clicar.
-document.querySelectorAll('.cat-card, .show-item, .trio-item').forEach(card => card.addEventListener('click', () => {
+// Cards de categoria e itens da galeria trio têm cursor:pointer (CSS já
+// sinaliza "clicável") mas nenhum handler próprio — levam para a vitrine
+// (#products) em vez de parecer clicável e não fazer nada ao clicar.
+// (Os itens de "#coll-showcase" são renderizados dinamicamente por
+// renderCollectionsShowcase() e já recebem seu próprio handler, que abre
+// o modal do produto específico em vez de só rolar a página.)
+document.querySelectorAll('.cat-card, .trio-item').forEach(card => card.addEventListener('click', () => {
   document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }));
 
@@ -1169,6 +1204,7 @@ function initCardTilt() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderProducts();
+  renderCollectionsShowcase();
   initReveal();
   initCursorGlow();
   initCardTilt();
