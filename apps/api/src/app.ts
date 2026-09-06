@@ -4,6 +4,7 @@ import type { AppConfig } from './config.js'
 import type { CredentialsStore } from './store/credentialsStore.js'
 import { InMemoryCredentialsStore } from './store/credentialsStore.js'
 import { SupabaseCredentialsStore } from './store/supabaseCredentialsStore.js'
+import { ResilientCredentialsStore } from './store/resilientCredentialsStore.js'
 import type { EventLogStore } from './store/eventLogStore.js'
 import { InMemoryEventLogStore } from './store/eventLogStore.js'
 import { healthRouter } from './routes/health.js'
@@ -44,7 +45,11 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   const credentialsStore =
     deps.credentialsStore ??
     (config.supabaseUrl && config.supabaseServiceRoleKey
-      ? new SupabaseCredentialsStore(config.supabaseUrl, config.supabaseServiceRoleKey)
+      ? // O Supabase é a fonte de verdade quando configurado, mas nunca deve
+        // bloquear a conexão da loja se estiver fora do ar/mal configurado
+        // (URL inválida, tabela ausente, etc.) — por isso passa por um
+        // fallback resiliente em memória (ver resilientCredentialsStore.ts).
+        new ResilientCredentialsStore(new SupabaseCredentialsStore(config.supabaseUrl, config.supabaseServiceRoleKey))
       : new InMemoryCredentialsStore())
 
   const eventLog = deps.eventLog ?? new InMemoryEventLogStore()
