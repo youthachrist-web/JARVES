@@ -299,12 +299,7 @@ function mapApiProduct(p) {
     stock: p.stock,
     colors: [], // o catálogo real ainda não tem swatches de cor em hex
     bg: DEFAULT_PRODUCT_BG,
-    // As fotos salvas no Supabase para o catálogo real são fotos pessoais/de
-    // modelos usadas como placeholder de teste, não fotografia de produto
-    // aprovada para a vitrine pública — por isso não são exibidas aqui.
-    // Nome, preço, estoque etc. continuam vindo normalmente do banco; só a
-    // imagem cai no gradiente padrão até existir fotografia de produto real.
-    images: [],
+    images: p.images || [],
     sizes: p.sizes || [],
     description: p.description || '',
     details: [],

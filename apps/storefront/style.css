@@ -413,8 +413,10 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .story-card p{font-size:.78rem;color:var(--gray-400);line-height:1.8;font-weight:300}
 .story-tags{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .story-tags li{font-size:.6rem;font-weight:700;letter-spacing:.06em;color:var(--nude-dark);background:var(--nude-pale);border:1px solid var(--nude-light);border-radius:20px;padding:5px 12px}
-/* Tagline em página cheia (Split reaproveitado — ver SPLIT SECTION) */
-.story-tagline .split-info{justify-content:center}
+/* Tagline em destaque — banner de texto centralizado, sem foto */
+.tagline-banner{background:var(--nude-pale);border-top:1px solid var(--beige);border-bottom:1px solid var(--beige);padding:88px 48px;text-align:center}
+.tagline-banner .split-tag{margin-bottom:14px}
+.tagline-banner .split-h{margin:0 auto;max-width:700px}
 /* Bloco final de Tecnologia Sustentável — centralizado, fora do grid de
    2 colunas por vir sozinho na sequência do manual */
 .story-tech{max-width:640px;margin:0 auto;text-align:center;padding:36px 32px;background:var(--off-white);border:1.5px solid var(--beige);border-radius:6px}
@@ -605,12 +607,13 @@ details.modal-details summary:hover{color:var(--nude)}
 .bm-quote{font-family:var(--font-display);font-size:clamp(2.4rem,5vw,4.8rem);letter-spacing:.04em;line-height:1;color:var(--black);text-transform:uppercase;margin-bottom:24px;font-style:normal}
 .bm-quote em{font-family:var(--font-serif);font-style:italic;color:var(--nude);font-weight:300;font-size:.88em}
 .bm-body{font-size:.85rem;color:var(--gray-400);line-height:1.9;max-width:400px;margin-bottom:30px;font-weight:300}
-.bm-viz{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.bm-viz{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .bv-item{border-radius:4px;overflow:hidden}
 .bv-in{width:100%;transition:transform .5s var(--ease)}
 .bv-item:hover .bv-in{transform:scale(1.03)}
-.bv-photo{aspect-ratio:1/1.3;object-fit:cover;width:100%;height:100%;display:block}
-.bv-offset{margin-top:30px}
+.bv-1 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c4cbb9,#aeb8a0)}
+.bv-2 .bv-in{aspect-ratio:1/1.4;background:linear-gradient(160deg,#c0c8b5,#aeb8a0);margin-top:30px}
+.bv-3 .bv-in{aspect-ratio:1/.7;background:linear-gradient(160deg,#d2d6cc,#c0c8b5)}
 .bv-4{display:flex;align-items:center;justify-content:center;border:1.5px solid var(--nude-light);background:var(--nude-pale);border-radius:4px}
 .bv-text{text-align:center;padding:20px}
 .bv-num{display:block;font-family:var(--font-display);font-size:2.3rem;color:var(--nude-dark);letter-spacing:.05em}
