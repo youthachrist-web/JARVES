@@ -872,6 +872,55 @@ function initProductsCarousel() {
   updateArrows();
 }
 
+// Bolinhas de posição (só visíveis no mobile, ver CSS) — uma por produto,
+// destacando a mais próxima do início da trilha conforme o usuário rola.
+function initProductsDots() {
+  const dotsWrap = document.getElementById('prod-dots');
+  if (!dotsWrap || !productsGrid || products.length === 0) return;
+
+  dotsWrap.innerHTML = '';
+  products.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'prod-dot' + (i === 0 ? ' active' : '');
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  const updateDots = () => {
+    const card = productsGrid.querySelector('.prod-card');
+    if (!card) return;
+    const step = card.getBoundingClientRect().width + 14; // mesmo gap do .prod-grid no mobile
+    const idx = Math.min(dots.length - 1, Math.round(productsGrid.scrollLeft / step));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  };
+  productsGrid.addEventListener('scroll', updateDots, { passive: true });
+  window.addEventListener('resize', updateDots);
+  updateDots();
+}
+
+// "Nudge": um pequeno vai-e-volta automático a primeira vez que o
+// carrossel entra na tela — sinaliza que dá pra arrastar/rolar sem
+// precisar de instrução escrita. Só no mobile (onde as setas já não
+// aparecem) e só se o usuário não pediu movimento reduzido.
+function initProductsNudge() {
+  if (!productsGrid) return;
+  if (window.matchMedia('(min-width: 769px)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const section = document.getElementById('products');
+  if (!section) return;
+
+  const nudge = () => {
+    productsGrid.scrollTo({ left: 46, behavior: 'smooth' });
+    setTimeout(() => productsGrid.scrollTo({ left: 0, behavior: 'smooth' }), 650);
+  };
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { nudge(); io.disconnect(); }
+    });
+  }, { threshold: 0.4 });
+  io.observe(section);
+}
+
 // Atualiza apenas o texto de contagem — o resto do carrossel já existe no
 // HTML estático (index.html), evitando recriar/duplicar elementos a cada
 // renderização.
@@ -1196,6 +1245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderProducts();
   initProductsCarousel();
+  initProductsDots();
+  initProductsNudge();
   renderCollectionsShowcase();
   initReveal();
   initCursorGlow();
