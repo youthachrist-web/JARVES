@@ -316,8 +316,18 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
    PRODUTOS
 ════════════════════════════════ */
 .products{padding:80px 48px 96px;max-width:1440px;margin:0 auto}
-.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:52px}
-.prod-card{background:var(--off-white);border-radius:4px;overflow:hidden;border:1px solid var(--beige);transition:transform .4s var(--ease),box-shadow .4s var(--ease);opacity:0;transform:translateY(22px)}
+/* Carrossel horizontal — trilha com scroll-snap em vez de grid, já que o
+   catálogo real cresce e mostrar tudo de uma vez (sem paginação/"Ver
+   Todos") fica melhor rolando do que espremido numa grade fixa. Setas ao
+   lado rolam a trilha; no touch dá pra arrastar. */
+.prod-carousel{display:flex;align-items:center;gap:10px;margin-bottom:20px;position:relative}
+.prod-car-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--off-white);border:1.5px solid var(--beige);color:var(--black);cursor:pointer;transition:all .2s}
+.prod-car-btn:hover{background:var(--black);border-color:var(--black);color:var(--white)}
+.prod-car-btn:disabled{cursor:not-allowed}
+.prod-car-btn:disabled:hover{background:var(--off-white);border-color:var(--beige);color:var(--black)}
+.prod-grid{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x proximity;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 12px;flex:1;min-width:0}
+.prod-grid::-webkit-scrollbar{display:none}
+.prod-card{flex:0 0 300px;scroll-snap-align:start;background:var(--off-white);border-radius:4px;overflow:hidden;border:1px solid var(--beige);transition:transform .4s var(--ease),box-shadow .4s var(--ease);opacity:0;transform:translateY(22px)}
 .prod-card.visible{opacity:1;transform:translateY(0)}
 .prod-card:hover{transform:translateY(-5px);box-shadow:var(--sh2)}
 .prod-img-wrap{position:relative;aspect-ratio:3/4;overflow:hidden;background:var(--cream);cursor:pointer}
@@ -342,8 +352,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .prod-old{font-size:.7rem;color:var(--gray-300);text-decoration:line-through;margin-left:5px}
 .prod-colors{display:flex;gap:4px}
 .color-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(0,0,0,.1)}
-.prods-cta{text-align:center;display:flex;flex-direction:column;align-items:center;gap:11px}
-.prods-hint{font-size:.58rem;color:var(--gray-300);letter-spacing:.14em;text-transform:uppercase}
+.prods-hint{font-size:.58rem;color:var(--gray-300);letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-top:6px}
 
 /* ════════════════════════════════
    LIFESTYLE BANNER FULLWIDTH
@@ -376,17 +385,8 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .coll-showcase-head{position:relative;z-index:2;text-align:center;margin-bottom:36px}
 .coll-showcase-h{font-family:var(--font-display);font-size:clamp(1.6rem,3.4vw,2.4rem);letter-spacing:.03em;color:var(--white);text-transform:uppercase;margin:0}
 .coll-showcase-h em{font-family:var(--font-serif);font-style:italic;color:var(--nude-light);font-weight:300;text-transform:none}
-/* Carrossel horizontal — trilha com scroll-snap em vez de grid, já que o
-   catálogo real cresce e nem sempre cabe (nem deve ficar espremido) numa
-   grade fixa. Setas ao lado rolam a trilha; no touch dá pra arrastar. */
-.coll-carousel{display:flex;align-items:center;gap:10px;max-width:1160px;margin:0 auto;position:relative;z-index:2}
-.coll-car-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.25);color:var(--white);cursor:pointer;transition:all .2s}
-.coll-car-btn:hover{background:var(--nude-light);border-color:var(--nude-light);color:var(--black)}
-.coll-car-btn:disabled{cursor:not-allowed}
-.coll-car-btn:disabled:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);color:var(--white)}
-.coll-showcase{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x proximity;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 12px;flex:1;min-width:0}
-.coll-showcase::-webkit-scrollbar{display:none}
-.show-item{flex:0 0 200px;scroll-snap-align:start;text-align:center;cursor:pointer}
+.coll-showcase{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:24px 20px;max-width:1100px;margin:0 auto;position:relative;z-index:2}
+.show-item{text-align:center;cursor:pointer}
 .show-img{aspect-ratio:3/4;border-radius:4px;margin-bottom:14px;overflow:hidden;position:relative;border:1px solid rgba(184,144,106,.12);background:rgba(255,255,255,.03);transition:transform .4s var(--ease)}
 .show-item:hover .show-img{transform:translateY(-6px)}
 .show-img img{width:100%;height:100%;object-fit:cover}
@@ -677,7 +677,6 @@ details.modal-details summary:hover{color:var(--nude)}
    RESPONSIVE
 ════════════════════════════════ */
 @media(max-width:1200px){
-  .prod-grid{grid-template-columns:repeat(3,1fr)}
   .footer-top{grid-template-columns:1fr 1fr}
   .f-news{grid-column:span 2}
 }
@@ -712,14 +711,14 @@ details.modal-details summary:hover{color:var(--nude)}
   .categories{padding:56px 20px}
   .cat-grid{grid-template-columns:1fr 1fr;gap:10px}
   .products{padding:56px 20px 80px}
-  .prod-grid{grid-template-columns:repeat(2,1fr);gap:11px}
+  .prod-card{flex-basis:220px}
+  .prod-car-btn{width:34px;height:34px}
   .brand-msg{padding:72px 20px}
   .brand-story{padding:56px 20px}
   .story-grid{grid-template-columns:1fr}
   .cert-grid{grid-template-columns:1fr 1fr}
   .collection{padding:72px 20px}
-  .show-item{flex-basis:150px}
-  .coll-car-btn{width:34px;height:34px}
+  .coll-showcase{grid-template-columns:repeat(2,1fr);gap:16px 11px}
   .ig-feed{padding:56px 20px}
   .ig-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .testimonials{padding:56px 20px}
@@ -740,7 +739,7 @@ details.modal-details summary:hover{color:var(--nude)}
   .lifestyle-content{padding:60px 28px}
 }
 @media(max-width:480px){
-  .prod-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .prod-card{flex-basis:78vw}
   .footer-nav-cols{grid-template-columns:1fr 1fr}
   .f-col:last-child{grid-column:span 2}
   .trio-gallery{grid-template-columns:1fr}

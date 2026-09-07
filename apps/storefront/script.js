@@ -340,10 +340,8 @@ async function loadProducts() {
 }
 
 // ── CONFIGURAÇÕES ──
-const INITIAL_COUNT   = 8;
 const FREE_SHIPPING   = 299;   // valor mínimo para frete grátis
 const DISCOUNT_CODE   = 'THYMOS10'; // cupão de 10%
-let showingAll        = false;
 let cart              = [];
 let cartDiscount      = 0;
 
@@ -797,10 +795,13 @@ function createProductCard(p, delay = 0) {
 }
 
 // ══════════════════════
-// RENDERIZAR PRODUTOS
+// RENDERIZAR PRODUTOS (carrossel #products-grid)
 // ══════════════════════
+// Mostra TODO o catálogo real de uma vez na trilha do carrossel — sem
+// paginação/"Ver Todos", já que rolar horizontalmente já dá acesso a
+// qualquer produto sem esconder nada atrás de um clique extra.
 function renderProducts() {
-  products.slice(0, INITIAL_COUNT).forEach((p, i) => {
+  products.forEach((p, i) => {
     const card = createProductCard(p, i * 0.06);
     productsGrid.appendChild(card);
   });
@@ -843,15 +844,15 @@ function renderCollectionsShowcase() {
 }
 
 // ══════════════════════
-// CARROSSEL DE COLEÇÕES (#coll-showcase)
+// CARROSSEL DE PRODUTOS (#products-grid — "Mais Vendidos")
 // ══════════════════════
 // Setas ao lado da trilha rolam por "página" (largura visível da trilha),
 // sempre alinhando no início do card mais próximo via scroll-snap. No touch
 // a trilha já é arrastável/deslizável nativamente, sem precisar de JS extra.
-function initCollectionsCarousel() {
-  const track = document.getElementById('coll-showcase');
-  const prevBtn = document.getElementById('coll-car-prev');
-  const nextBtn = document.getElementById('coll-car-next');
+function initProductsCarousel() {
+  const track = productsGrid;
+  const prevBtn = document.getElementById('prod-car-prev');
+  const nextBtn = document.getElementById('prod-car-next');
   if (!track || !prevBtn || !nextBtn) return;
 
   const scrollByPage = dir => {
@@ -872,48 +873,9 @@ function initCollectionsCarousel() {
   updateArrows();
 }
 
-function toggleProducts() {
-  const btn = document.getElementById('toggle-products-btn');
-  if (!showingAll) {
-    const div = document.createElement('div');
-    div.id = 'products-divider';
-    div.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:20px;padding:8px 0 4px;opacity:0;transition:opacity 0.5s';
-    div.innerHTML = `<div style="flex:1;height:1px;background:rgba(114,138,110,0.18)"></div>
-      <span style="font-size:.6rem;font-weight:700;letter-spacing:.3em;color:var(--nude);text-transform:uppercase;white-space:nowrap">Mais Produtos</span>
-      <div style="flex:1;height:1px;background:rgba(114,138,110,0.18)"></div>`;
-    productsGrid.appendChild(div);
-    requestAnimationFrame(() => div.style.opacity = '1');
-
-    products.slice(INITIAL_COUNT).forEach((p, i) => {
-      const card = createProductCard(p);
-      card.style.cssText += `opacity:0;transform:translateY(32px);transition:opacity .55s ease ${i*.07}s,transform .55s ease ${i*.07}s`;
-      productsGrid.appendChild(card);
-      requestAnimationFrame(() => setTimeout(() => { card.style.opacity='1'; card.style.transform='translateY(0)'; }, 30));
-    });
-
-    showingAll = true;
-    btn.textContent = 'Ver Menos ↑';
-    btn.setAttribute('aria-expanded', 'true');
-  } else {
-    [...productsGrid.querySelectorAll('.prod-card')].slice(INITIAL_COUNT).forEach((c, i) => {
-      c.style.transition = `opacity .3s ease ${i*.03}s,transform .3s ease ${i*.03}s`;
-      c.style.opacity = '0'; c.style.transform = 'translateY(16px)';
-    });
-    setTimeout(() => {
-      [...productsGrid.querySelectorAll('.prod-card')].slice(INITIAL_COUNT).forEach(c => c.remove());
-      document.getElementById('products-divider')?.remove();
-    }, 350);
-    showingAll = false;
-    btn.textContent = 'Ver Todos os Produtos ↓';
-    btn.setAttribute('aria-expanded', 'false');
-    setTimeout(() => document.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'}), 400);
-  }
-}
-window.toggleProducts = toggleProducts;
-
-// Atualiza apenas o texto de contagem — o botão em si já existe no HTML
-// estático (index.html), evitando recriar/duplicar o elemento e seu
-// listener inline a cada renderização.
+// Atualiza apenas o texto de contagem — o resto do carrossel já existe no
+// HTML estático (index.html), evitando recriar/duplicar elementos a cada
+// renderização.
 function updateCTAButton() {
   const hint = document.getElementById('products-hint');
   if (hint) hint.textContent = `${products.length} produtos disponíveis`;
@@ -1234,8 +1196,8 @@ function initCardTilt() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderProducts();
+  initProductsCarousel();
   renderCollectionsShowcase();
-  initCollectionsCarousel();
   initReveal();
   initCursorGlow();
   initCardTilt();
