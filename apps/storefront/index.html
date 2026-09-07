@@ -68,14 +68,7 @@
 
     <!-- IMAGEM LADO ESQUERDO -->
     <div class="wb-img">
-      <!-- Sem autoplay/preload aqui de propósito: o popup nasce escondido
-           (opacity:0) e só aparece depois de 1.4s (ou nunca, se já fechado
-           nessa sessão) — carregar/tocar o vídeo antes disso competiria por
-           banda com o vídeo da seção Coleção Onyx à toa. play() é chamado
-           via JS (index.html) exatamente quando o popup fica visível. -->
-      <video id="wb-video" poster="assets/videos/onyx-coldplunge-poster.jpg" muted loop playsinline webkit-playsinline preload="none" aria-label="Momento de recuperação pós-treino — Coleção Onyx">
-        <source src="assets/videos/onyx-coldplunge.mp4" type="video/mp4"/>
-      </video>
+      <img src="assets/lifestyle/thymos-lifestyle-tanktop-back.jpg" alt="Regata Thymos — wordmark bordada nas costas"/>
       <div class="wb-img-overlay"></div>
       <div class="wb-img-text">
         <p>NOVA<br/>COLEÇÃO<br/>2026</p>
@@ -664,7 +657,6 @@
 function closeWelcome(){
   const o=document.getElementById('welcome-overlay');
   o.style.opacity='0';o.style.pointerEvents='none';
-  document.getElementById('wb-video')?.pause();
   setTimeout(()=>o.remove(),400);
   sessionStorage.setItem('wbClosed','1');
 }
@@ -693,16 +685,7 @@ function handleWbForm(e){
 window.closeWelcome=closeWelcome;window.handleWbForm=handleWbForm;
 document.addEventListener('DOMContentLoaded',()=>{
   if(!sessionStorage.getItem('wbClosed')){
-    setTimeout(()=>{
-      document.getElementById('welcome-overlay').classList.add('show');
-      // preload="none" no vídeo do popup (de propósito, ver comentário no
-      // HTML) — só carrega/toca agora que o popup fica visível de verdade.
-      // play() retorna uma Promise que rejeita se o navegador bloquear o
-      // autoplay; o catch evita um erro não tratado no console sem quebrar
-      // nada — o poster continua visível nesse caso.
-      const wbVideo = document.getElementById('wb-video');
-      if (wbVideo) { wbVideo.load(); wbVideo.play().catch(()=>{}); }
-    },1400);
+    setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),1400);
   } else {
     document.getElementById('welcome-overlay').remove();
   }

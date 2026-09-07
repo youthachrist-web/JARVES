@@ -346,7 +346,6 @@ let cart              = [];
 let cartDiscount      = 0;
 
 // ── DOM ──
-const navbar       = document.getElementById('navbar');
 const hamburger    = document.getElementById('hamburger');
 const mobileMenu   = document.getElementById('mobile-menu');
 const cartBtn      = document.getElementById('cart-btn');
