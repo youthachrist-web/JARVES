@@ -842,6 +842,36 @@ function renderCollectionsShowcase() {
   });
 }
 
+// ══════════════════════
+// CARROSSEL DE COLEÇÕES (#coll-showcase)
+// ══════════════════════
+// Setas ao lado da trilha rolam por "página" (largura visível da trilha),
+// sempre alinhando no início do card mais próximo via scroll-snap. No touch
+// a trilha já é arrastável/deslizável nativamente, sem precisar de JS extra.
+function initCollectionsCarousel() {
+  const track = document.getElementById('coll-showcase');
+  const prevBtn = document.getElementById('coll-car-prev');
+  const nextBtn = document.getElementById('coll-car-next');
+  if (!track || !prevBtn || !nextBtn) return;
+
+  const scrollByPage = dir => {
+    track.scrollBy({ left: dir * track.clientWidth * 0.9, behavior: 'smooth' });
+  };
+  prevBtn.addEventListener('click', () => scrollByPage(-1));
+  nextBtn.addEventListener('click', () => scrollByPage(1));
+
+  const updateArrows = () => {
+    const maxScroll = track.scrollWidth - track.clientWidth - 2;
+    prevBtn.disabled = track.scrollLeft <= 0;
+    nextBtn.disabled = maxScroll <= 0 || track.scrollLeft >= maxScroll;
+    prevBtn.style.opacity = prevBtn.disabled ? '.35' : '1';
+    nextBtn.style.opacity = nextBtn.disabled ? '.35' : '1';
+  };
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  window.addEventListener('resize', updateArrows);
+  updateArrows();
+}
+
 function toggleProducts() {
   const btn = document.getElementById('toggle-products-btn');
   if (!showingAll) {
@@ -1205,6 +1235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   renderProducts();
   renderCollectionsShowcase();
+  initCollectionsCarousel();
   initReveal();
   initCursorGlow();
   initCardTilt();
