@@ -156,9 +156,12 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .wb-title{font-family:var(--font-display);font-size:2.5rem;letter-spacing:.04em;line-height:1;color:var(--black);text-transform:uppercase;margin-bottom:6px}
 .wb-title em{font-family:var(--font-serif);font-style:italic;color:var(--nude);font-weight:300;font-size:.9em}
 .wb-subtitle{font-size:.82rem;color:var(--gray-400);line-height:1.7;font-weight:300;margin-bottom:22px}
-.wb-code-box{background:var(--nude-pale);border:1px dashed var(--nude-light);border-radius:var(--r);padding:12px 18px;text-align:center;margin-bottom:22px}
+.wb-code-box{background:var(--nude-pale);border:1px dashed var(--nude-light);border-radius:var(--r);padding:12px 18px;text-align:center;margin-bottom:22px;transition:background .3s,border-color .3s}
 .wb-code-box span{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-400);display:block;margin-bottom:3px}
 .wb-code-box strong{font-family:var(--font-display);font-size:1.6rem;color:var(--nude-dark);letter-spacing:.2em}
+.wb-code-box .wb-code-locked{font-family:var(--font-body);font-size:.72rem;letter-spacing:.02em;text-transform:none;color:var(--gray-400);font-weight:400}
+.wb-code-box.unlocked{background:var(--nude-pale);border-style:solid;border-color:var(--nude)}
+.wb-code-box.unlocked span{color:var(--nude-dark)}
 .wb-form{display:flex;gap:0;margin-bottom:10px}
 .wb-input{flex:1;padding:12px 15px;border:1.5px solid var(--beige);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.78rem;color:var(--gray-700);outline:none;background:var(--off-white);transition:border-color .2s}
 .wb-input:focus{border-color:var(--nude)}
@@ -373,8 +376,17 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .coll-showcase-head{position:relative;z-index:2;text-align:center;margin-bottom:36px}
 .coll-showcase-h{font-family:var(--font-display);font-size:clamp(1.6rem,3.4vw,2.4rem);letter-spacing:.03em;color:var(--white);text-transform:uppercase;margin:0}
 .coll-showcase-h em{font-family:var(--font-serif);font-style:italic;color:var(--nude-light);font-weight:300;text-transform:none}
-.coll-showcase{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:24px 20px;max-width:1100px;margin:0 auto;position:relative;z-index:2}
-.show-item{text-align:center;cursor:pointer}
+/* Carrossel horizontal — trilha com scroll-snap em vez de grid, já que o
+   catálogo real cresce e nem sempre cabe (nem deve ficar espremido) numa
+   grade fixa. Setas ao lado rolam a trilha; no touch dá pra arrastar. */
+.coll-carousel{display:flex;align-items:center;gap:10px;max-width:1160px;margin:0 auto;position:relative;z-index:2}
+.coll-car-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.25);color:var(--white);cursor:pointer;transition:all .2s}
+.coll-car-btn:hover{background:var(--nude-light);border-color:var(--nude-light);color:var(--black)}
+.coll-car-btn:disabled{cursor:not-allowed}
+.coll-car-btn:disabled:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);color:var(--white)}
+.coll-showcase{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x proximity;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 12px;flex:1;min-width:0}
+.coll-showcase::-webkit-scrollbar{display:none}
+.show-item{flex:0 0 200px;scroll-snap-align:start;text-align:center;cursor:pointer}
 .show-img{aspect-ratio:3/4;border-radius:4px;margin-bottom:14px;overflow:hidden;position:relative;border:1px solid rgba(184,144,106,.12);background:rgba(255,255,255,.03);transition:transform .4s var(--ease)}
 .show-item:hover .show-img{transform:translateY(-6px)}
 .show-img img{width:100%;height:100%;object-fit:cover}
@@ -679,9 +691,13 @@ details.modal-details summary:hover{color:var(--nude)}
   .split-photo-ph,.split-photo{min-height:380px}
   .trio-gallery{grid-template-columns:1fr 1fr;gap:10px}
   .trio-item:nth-child(3){display:none}
-  .welcome-box{grid-template-columns:1fr}
-  .wb-img{display:none}
-  .wb-content{padding:44px 36px}
+  /* Popup de boas-vindas: antes escondia a foto no mobile e mostrava só o
+     texto — agora empilha foto (banner) + conteúdo, igual à imagem que já
+     aparece no desktop, com o box rolável caso não caiba na tela. */
+  .welcome-box{grid-template-columns:1fr;max-height:calc(100vh - 40px);overflow-y:auto}
+  .wb-img{display:block;min-height:0;height:180px}
+  .wb-img-text p{font-size:1.5rem}
+  .wb-content{padding:32px 28px}
   .ig-grid{grid-template-columns:repeat(3,1fr);gap:10px}
 }
 @media(max-width:768px){
@@ -702,7 +718,8 @@ details.modal-details summary:hover{color:var(--nude)}
   .story-grid{grid-template-columns:1fr}
   .cert-grid{grid-template-columns:1fr 1fr}
   .collection{padding:72px 20px}
-  .coll-showcase{grid-template-columns:repeat(2,1fr);gap:16px 11px}
+  .show-item{flex-basis:150px}
+  .coll-car-btn{width:34px;height:34px}
   .ig-feed{padding:56px 20px}
   .ig-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .testimonials{padding:56px 20px}
