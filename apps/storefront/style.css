@@ -426,6 +426,17 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .cert-grid img{width:100%;height:auto;border-radius:4px}
 
 /* ════════════════════════════════
+   INSTAGRAM — SIGA A THYMOS
+════════════════════════════════ */
+.ig-feed{padding:88px 48px;max-width:1200px;margin:0 auto}
+.ig-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.ig-item{position:relative;display:block;aspect-ratio:4/5;border-radius:4px;overflow:hidden;background:var(--nude-pale)}
+.ig-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease)}
+.ig-item:hover img{transform:scale(1.05)}
+.ig-hover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--white);background:rgba(11,19,15,.35);opacity:0;transition:opacity .35s var(--ease)}
+.ig-item:hover .ig-hover{opacity:1}
+
+/* ════════════════════════════════
    DEPOIMENTOS
 ════════════════════════════════ */
 .testimonials{padding:88px 48px;max-width:1200px;margin:0 auto}
@@ -671,6 +682,7 @@ details.modal-details summary:hover{color:var(--nude)}
   .welcome-box{grid-template-columns:1fr}
   .wb-img{display:none}
   .wb-content{padding:44px 36px}
+  .ig-grid{grid-template-columns:repeat(3,1fr);gap:10px}
 }
 @media(max-width:768px){
   .navbar{padding:0 20px}
@@ -691,6 +703,8 @@ details.modal-details summary:hover{color:var(--nude)}
   .cert-grid{grid-template-columns:1fr 1fr}
   .collection{padding:72px 20px}
   .coll-showcase{grid-template-columns:repeat(2,1fr);gap:16px 11px}
+  .ig-feed{padding:56px 20px}
+  .ig-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .testimonials{padding:56px 20px}
   .testi-grid{grid-template-columns:1fr}
   .testi-card:last-child{grid-column:span 1}
