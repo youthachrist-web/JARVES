@@ -142,7 +142,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
   /* ↓ Cor de fundo enquanto não há imagem */
   background:linear-gradient(160deg,#18261f,#0e1813,#23382e);
 }
-.wb-img img,.wb-img video{width:100%;height:100%;object-fit:cover;object-position:center top}
+.wb-img img{width:100%;height:100%;object-fit:cover;object-position:center top}
 .wb-img-overlay{
   position:absolute;inset:0;
   background:linear-gradient(to top,rgba(20,26,22,.75) 0%,rgba(20,26,22,.1) 60%,transparent 100%);
@@ -711,8 +711,22 @@ details.modal-details summary:hover{color:var(--nude)}
   .categories{padding:56px 20px}
   .cat-grid{grid-template-columns:1fr 1fr;gap:10px}
   .products{padding:56px 20px 80px}
-  .prod-card{flex-basis:220px}
-  .prod-car-btn{width:34px;height:34px}
+  /* No mobile as setas somem — o toque já arrasta a trilha nativamente —
+     e o card usa uma fração do próprio container (não px fixo) pra caber
+     exatamente 3 por vez antes de precisar rolar, do jeito que foi pedido,
+     independente da largura exata do aparelho. */
+  .prod-carousel{gap:0}
+  .prod-car-btn{display:none}
+  .prod-grid{gap:9px}
+  .prod-card{flex:0 0 calc((100% - 18px) / 3)}
+  .prod-info{padding:9px 8px 11px}
+  .prod-name{font-size:.62rem;margin-bottom:5px}
+  .prod-cat{font-size:.48rem;margin-bottom:2px}
+  .prod-price{font-size:.82rem}
+  .prod-old{font-size:.56rem}
+  .prod-colors{display:none}
+  .prod-badge{font-size:.44rem;padding:3px 6px}
+  .prod-stock-warn{font-size:.42rem;padding:3px 5px}
   .brand-msg{padding:72px 20px}
   .brand-story{padding:56px 20px}
   .story-grid{grid-template-columns:1fr}
@@ -739,7 +753,6 @@ details.modal-details summary:hover{color:var(--nude)}
   .lifestyle-content{padding:60px 28px}
 }
 @media(max-width:480px){
-  .prod-card{flex-basis:78vw}
   .footer-nav-cols{grid-template-columns:1fr 1fr}
   .f-col:last-child{grid-column:span 2}
   .trio-gallery{grid-template-columns:1fr}
