@@ -353,6 +353,9 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .prod-colors{display:flex;gap:4px}
 .color-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(0,0,0,.1)}
 .prods-hint{font-size:.58rem;color:var(--gray-300);letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-top:6px}
+/* Bolinhas de posição do carrossel — só fazem sentido no mobile (onde as
+   setas de navegação somem); no desktop/tablet ficam escondidas. */
+.prod-dots{display:none}
 
 /* ════════════════════════════════
    LIFESTYLE BANNER FULLWIDTH
@@ -714,11 +717,18 @@ details.modal-details summary:hover{color:var(--nude)}
   /* No mobile as setas somem — o toque já arrasta a trilha nativamente —
      e o card usa uma fração do próprio container (não px fixo) pra caber
      bem 2 por vez, com tamanho e espaçamento confortáveis (3 por vez
-     ficava espremido demais e cortava informação do card). */
+     ficava espremido demais e cortava informação do card). O /2.15 em
+     vez de /2 exato deixa uma "espiadinha" do 3º card na borda direita —
+     sinal visual de que dá pra rolar mais, reforçado pelas bolinhas
+     abaixo e por um pequeno "nudge" automático (initProductsNudge() em
+     script.js) na primeira vez que a seção aparece na tela. */
   .prod-carousel{gap:0}
   .prod-car-btn{display:none}
   .prod-grid{gap:14px}
-  .prod-card{flex:0 0 calc((100% - 14px) / 2)}
+  .prod-card{flex:0 0 calc((100% - 14px) / 2.15)}
+  .prod-dots{display:flex;justify-content:center;gap:6px;margin:2px 0 14px}
+  .prod-dot{width:6px;height:6px;border-radius:50%;background:var(--beige);transition:all .25s var(--ease)}
+  .prod-dot.active{width:18px;border-radius:3px;background:var(--nude-dark)}
   .brand-msg{padding:72px 20px}
   .brand-story{padding:56px 20px}
   .story-grid{grid-template-columns:1fr}
