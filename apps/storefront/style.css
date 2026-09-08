@@ -474,12 +474,6 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .cart-overlay.open{opacity:1;pointer-events:all}
 .cart-drawer{position:fixed;top:0;right:0;width:440px;height:100vh;background:var(--white);border-left:1px solid var(--beige);z-index:1200;transform:translateX(100%);transition:transform .45s var(--ease);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(20,26,22,.1)}
 .cart-drawer.open{transform:translateX(0)}
-
-/* Botão flutuante de WhatsApp — sempre visível, canto inferior direito.
-   z-index abaixo do carrinho/modais/popup (que ficam 1100+) de propósito,
-   pra não sobrar por cima deles quando abertos. */
-.wa-float{position:fixed;right:20px;bottom:20px;width:54px;height:54px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(20,26,22,.28);z-index:900;transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
-.wa-float:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(20,26,22,.35)}
 /* header */
 .cart-hd{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--beige);background:var(--off-white)}
 .cart-hd-left{display:flex;align-items:center;gap:10px;color:var(--nude)}
