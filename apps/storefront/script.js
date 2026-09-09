@@ -658,12 +658,53 @@ const INFO_MODAL_CONTENT = {
       <p class="modal-desc">Assim que confirmamos o pagamento do seu pedido, enviamos por e-mail e WhatsApp o código de rastreio e o prazo estimado de entrega.</p>
       <p class="modal-desc" style="border:none">Já finalizou uma compra e ainda não recebeu essas informações? Fale com a gente pelo <a href="mailto:contato@thymosfit.com.br?subject=Rastrear%20pedido" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a> informando o nome usado no pedido.</p>`,
   },
-  privacy: {
-    title: 'Privacidade',
+  terms: {
+    title: 'Termos de Uso',
     body: `
-      <p class="modal-desc">Coletamos apenas os dados necessários para processar seu pedido e atendimento: nome, e-mail, telefone e endereço de entrega. Não vendemos nem compartilhamos seus dados com terceiros para fins comerciais.</p>
-      <p class="modal-desc">Usamos seu e-mail para comunicações sobre pedidos e, com seu consentimento explícito (cadastro na newsletter), para novidades e promoções — você pode cancelar a qualquer momento.</p>
-      <p class="modal-desc" style="border:none">Nos termos da LGPD, você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento pelo <a href="mailto:contato@thymosfit.com.br?subject=Privacidade%20de%20dados" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p>`,
+      <p class="modal-desc" style="border:none;padding-bottom:16px">Última atualização: setembro de 2026. Ao acessar ou realizar uma compra nesta loja virtual, você concorda com os termos abaixo.</p>
+      <details class="modal-details" open><summary>1. Quem somos</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Esta loja é operada por <strong>THYMOS COMPANY LTDA</strong>, inscrita no CNPJ sob o nº <strong>68.874.570/0001-44</strong>, com sede na R. Manoel Bernardes, 1150, Itaipava, Itajaí/SC, CEP 88.316-400.</p></details>
+      <details class="modal-details"><summary>2. Aceitação dos termos</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">O uso deste site implica concordância integral com estes Termos de Uso e com nossa <a href="#" onclick="closeInfoModal();openInfoModal('privacy');return false;" style="color:var(--nude);text-decoration:underline">Política de Privacidade</a>. Se você não concorda com algum ponto, pedimos que não utilize o site.</p></details>
+      <details class="modal-details"><summary>3. Produtos e preços</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Fazemos o possível para manter fotos, descrições, preços e estoque atualizados, mas pequenas divergências podem ocorrer. Preços podem mudar sem aviso prévio, valendo sempre o valor exibido no momento da finalização do pedido.</p></details>
+      <details class="modal-details"><summary>4. Pedidos e pagamento</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Aceitamos Pix, cartão de crédito (em até 3x sem juros) e boleto bancário. O pedido só é confirmado após a aprovação do pagamento. Reservamo-nos o direito de cancelar pedidos em caso de indício de fraude, erro de preço/estoque ou dados de entrega incompletos, com reembolso integral quando já houver pagamento.</p></details>
+      <details class="modal-details"><summary>5. Entrega e frete</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">O frete é grátis em compras acima de R$${FREE_SHIPPING} e calculado pelo CEP nas demais. O prazo estimado é de 3 a 10 dias úteis após a confirmação do pagamento, podendo variar conforme a transportadora e a região.</p></details>
+      <details class="modal-details"><summary>6. Trocas, devoluções e direito de arrependimento</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Conforme o art. 49 do Código de Defesa do Consumidor, você pode desistir da compra em até 7 dias corridos após o recebimento, com reembolso integral. Trocas por tamanho/defeito são gratuitas em até 30 dias corridos, para peças sem uso, com etiqueta e nota fiscal — solicite pelo <a href="mailto:contato@thymosfit.com.br?subject=Troca%20ou%20devolu%C3%A7%C3%A3o" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p></details>
+      <details class="modal-details"><summary>7. Propriedade intelectual</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Marca, logotipo, textos, fotos e demais conteúdos deste site pertencem à Thymos Company Ltda ou a seus licenciadores, e não podem ser copiados, reproduzidos ou usados comercialmente sem autorização prévia por escrito.</p></details>
+      <details class="modal-details"><summary>8. Limitação de responsabilidade</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Não nos responsabilizamos por atrasos causados por transportadoras, greves, desastres naturais ou outros eventos fora do nosso controle razoável, nem pelo uso indevido dos produtos em desacordo com as instruções de cuidado indicadas na etiqueta.</p></details>
+      <details class="modal-details"><summary>9. Alterações destes termos</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Podemos atualizar estes termos a qualquer momento para refletir mudanças legais ou operacionais. A versão vigente é sempre a publicada nesta página, com a data de atualização indicada no topo.</p></details>
+      <details class="modal-details"><summary>10. Foro e legislação aplicável</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Estes termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de Itajaí/SC para dirimir eventuais controvérsias, ressalvado o direito do consumidor de optar pelo foro do seu domicílio, conforme o CDC.</p></details>
+      <p class="modal-desc" style="border:none;padding-top:16px">Dúvidas? Fale com a gente pelo <a href="mailto:contato@thymosfit.com.br?subject=Termos%20de%20Uso" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p>`,
+  },
+  privacy: {
+    title: 'Política de Privacidade',
+    body: `
+      <p class="modal-desc" style="border:none;padding-bottom:16px">Última atualização: setembro de 2026. Esta política explica como a Thymos Company Ltda coleta, usa e protege seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).</p>
+      <details class="modal-details" open><summary>1. Quem é o controlador dos seus dados</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0"><strong>THYMOS COMPANY LTDA</strong>, CNPJ 68.874.570/0001-44, com sede na R. Manoel Bernardes, 1150, Itaipava, Itajaí/SC, é a controladora responsável pelo tratamento dos seus dados nesta loja.</p></details>
+      <details class="modal-details"><summary>2. Quais dados coletamos</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Nome, e-mail, telefone e endereço de entrega, informados no momento da compra ou do cadastro na newsletter. Também coletamos dados de navegação básicos (páginas visitadas, dispositivo) para melhorar o funcionamento do site.</p></details>
+      <details class="modal-details"><summary>3. Para que usamos seus dados</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Para processar e entregar seu pedido, prestar atendimento, emitir nota fiscal e, com seu consentimento explícito (cadastro na newsletter), enviar novidades e promoções — você pode cancelar a qualquer momento pelo link no rodapé dos e-mails.</p></details>
+      <details class="modal-details"><summary>4. Com quem compartilhamos</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Compartilhamos apenas o necessário com parceiros que viabilizam a operação: processadoras de pagamento, transportadoras/correios e serviços de e-mail/WhatsApp para comunicação sobre o pedido. Nunca vendemos seus dados a terceiros para fins comerciais.</p></details>
+      <details class="modal-details"><summary>5. Cookies</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Usamos cookies essenciais para o funcionamento do carrinho de compras e, eventualmente, cookies de análise para entender como o site é usado. Você pode desativá-los nas configurações do seu navegador, embora isso possa afetar algumas funcionalidades.</p></details>
+      <details class="modal-details"><summary>6. Armazenamento e segurança</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Adotamos medidas técnicas e organizacionais razoáveis para proteger seus dados contra acesso não autorizado, perda ou alteração. Seus dados são mantidos apenas pelo tempo necessário às finalidades descritas ou conforme exigido por lei (ex.: obrigações fiscais).</p></details>
+      <details class="modal-details"><summary>7. Seus direitos (LGPD)</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Você pode solicitar a qualquer momento a confirmação, o acesso, a correção, a anonimização, a portabilidade ou a exclusão dos seus dados, bem como revogar consentimentos, pelo <a href="mailto:contato@thymosfit.com.br?subject=Privacidade%20de%20dados" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p></details>
+      <details class="modal-details"><summary>8. Alterações desta política</summary>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">Podemos atualizar esta política periodicamente. A versão vigente é sempre a publicada nesta página, com a data de atualização indicada no topo.</p></details>
+      <p class="modal-desc" style="border:none;padding-top:16px">Dúvidas sobre seus dados? Fale com a gente pelo <a href="mailto:contato@thymosfit.com.br?subject=Privacidade%20de%20dados" style="color:var(--nude);text-decoration:underline">contato@thymosfit.com.br</a>.</p>`,
   },
 };
 
