@@ -196,16 +196,30 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       }
     }
 
-    await mailer.send(
-      `Novo pedido — #${orderId}`,
-      `Cliente: ${customerName} (${customerEmail}${customerPhone ? `, ${customerPhone}` : ''})\n` +
-        `Subtotal: R$ ${subtotal.toLocaleString('pt-BR')}${appliedCoupon ? `\nCupão: ${appliedCoupon} (-R$ ${discount.toLocaleString('pt-BR')})` : ''}\n` +
-        `Total: R$ ${total.toLocaleString('pt-BR')}\n` +
-        (paymentUrl ? `Link de pagamento: ${paymentUrl}\n` : '') +
-        `\nItens:\n${resolvedItems.map((i) => `- ${i.qty}x ${i.name} — R$ ${i.price.toLocaleString('pt-BR')}`).join('\n')}`
-    )
-
     res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, paymentUrl })
+
+    // E-mail de notificação: melhor esforço, disparado depois da resposta ao
+    // cliente e nunca aguardado por ela — um SMTP lento ou fora do ar (visto
+    // em produção: timeout de conexão de ~2min) não pode travar o checkout
+    // nem, sem o catch, derrubar o processo inteiro por unhandled rejection.
+    mailer
+      .send(
+        `Novo pedido — #${orderId}`,
+        `Cliente: ${customerName} (${customerEmail}${customerPhone ? `, ${customerPhone}` : ''})\n` +
+          `Subtotal: R$ ${subtotal.toLocaleString('pt-BR')}${appliedCoupon ? `\nCupão: ${appliedCoupon} (-R$ ${discount.toLocaleString('pt-BR')})` : ''}\n` +
+          `Total: R$ ${total.toLocaleString('pt-BR')}\n` +
+          (paymentUrl ? `Link de pagamento: ${paymentUrl}\n` : '') +
+          `\nItens:\n${resolvedItems.map((i) => `- ${i.qty}x ${i.name} — R$ ${i.price.toLocaleString('pt-BR')}`).join('\n')}`
+      )
+      .catch((err) => {
+        logger.error('Falha ao enviar e-mail de notificação do pedido', { orderId, message: (err as Error).message })
+        void eventLog.record({
+          level: 'error',
+          category: 'order',
+          message: `Falha ao enviar e-mail de notificação do pedido #${orderId}`,
+          detail: { orderId, error: (err as Error).message },
+        })
+      })
   })
 
   return router
