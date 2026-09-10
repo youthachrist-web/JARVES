@@ -74,10 +74,14 @@ class RealAbacatePayClient implements AbacatePayClient {
     })
 
     // 2) Checkout de item único apontando para o produto recém-criado.
+    // Só PIX: CARD exige homologação extra da AbacatePay para a loja (nem
+    // toda conta tem liberado) e pedir um método indisponível derruba a
+    // criação do checkout inteiro — visto em produção ("CARD is not
+    // available for this store"). PIX é o método padrão, sempre disponível.
     const checkout = await abacateFetch<{ id: string; url: string; status: string }>(this.apiKey, '/checkouts/create', {
       items: [{ id: product.id, quantity: 1 }],
       externalId: params.externalId,
-      methods: ['PIX', 'CARD'],
+      methods: ['PIX'],
       returnUrl: params.returnUrl,
       completionUrl: params.completionUrl,
     })

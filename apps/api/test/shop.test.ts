@@ -250,6 +250,23 @@ describe('shopRouter — /orders (integração)', () => {
     expect(events.some((e) => e.message.includes('#42'))).toBe(true)
   })
 
+  it('responde 201 normalmente mesmo quando o envio do e-mail de notificação falha (regressão: SMTP fora do ar/lento derrubava o processo inteiro)', async () => {
+    const orders = fakeOrdersStore(43)
+    const mailer = { send: vi.fn().mockRejectedValue(new Error('Connection timeout')) }
+    const { app, eventLog } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { mailer })
+    const res = await request(app).post('/orders').send(validBody)
+
+    expect(res.status).toBe(201)
+    expect(res.body.orderId).toBe(43)
+    expect(mailer.send).toHaveBeenCalledTimes(1)
+
+    // A falha do e-mail é assíncrona (disparada depois da resposta) — espera
+    // a próxima volta do loop antes de checar o log de eventos.
+    await new Promise((r) => setTimeout(r, 10))
+    const events = await eventLog.recent(10)
+    expect(events.some((e) => e.message.includes('Falha ao enviar e-mail') && e.message.includes('#43'))).toBe(true)
+  })
+
   it('responde 503 sem quebrar quando salvar o pedido falha', async () => {
     const failing: OrdersStore = {
       create: vi.fn().mockRejectedValue(new Error('boom')),

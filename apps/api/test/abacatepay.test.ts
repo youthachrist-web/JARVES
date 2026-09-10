@@ -48,7 +48,7 @@ describe('AbacatePayClient#createPaymentLink', () => {
     const checkoutBody = JSON.parse(checkoutInit.body)
     expect(checkoutBody.items).toEqual([{ id: 'prod_abc', quantity: 1 }])
     expect(checkoutBody.externalId).toBe('pedido-1')
-    expect(checkoutBody.methods).toEqual(['PIX', 'CARD'])
+    expect(checkoutBody.methods).toEqual(['PIX'])
   })
 
   it('lança erro descritivo quando a criação do produto falha', async () => {
