@@ -26,6 +26,9 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       userAgent: 'Thymos Test',
       scopes: ['read_products'],
     },
+    abacatePayApiKey: null,
+    abacatePayWebhookSecret: null,
+    storefrontUrl: null,
     ...overrides,
   }
 }

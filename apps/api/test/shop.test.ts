@@ -6,6 +6,7 @@ import { InMemoryEventLogStore } from '../src/store/eventLogStore.js'
 import type { Mailer } from '../src/lib/mailer.js'
 import type { ProductsStore, Product } from '../src/store/productsStore.js'
 import type { OrdersStore } from '../src/store/ordersStore.js'
+import type { AbacatePayClient, PaymentLink } from '../src/lib/abacatepay.js'
 
 function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -18,6 +19,9 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     smtp: null,
     adminAppUrl: null,
     nuvemshop: null,
+    abacatePayApiKey: null,
+    abacatePayWebhookSecret: null,
+    storefrontUrl: null,
     ...overrides,
   }
 }
@@ -35,6 +39,15 @@ const SAMPLE_PRODUCT: Product = {
   images: ['https://example.com/a.jpg'],
 }
 
+const SAMPLE_PRODUCT_PROMO: Product = {
+  ...SAMPLE_PRODUCT,
+  id: 2,
+  name: 'Conjunto Onyx Power',
+  price: 489,
+  promotionalPrice: 399,
+  stock: 3,
+}
+
 describe('GET /products', () => {
   it('retorna 503 quando o Supabase não está configurado (productsStore ausente)', async () => {
     const app = createApp(baseConfig())
@@ -50,11 +63,11 @@ describe('GET /products', () => {
 })
 
 describe('POST /orders', () => {
-  it('retorna 503 quando o Supabase não está configurado (ordersStore ausente)', async () => {
+  it('retorna 503 quando o Supabase não está configurado (productsStore/ordersStore ausentes)', async () => {
     const app = createApp(baseConfig())
     const res = await request(app)
       .post('/orders')
-      .send({ customerName: 'Ana', customerEmail: 'ana@example.com', items: [{ productId: 1, name: 'X', price: 10, qty: 1 }], total: 10 })
+      .send({ customerName: 'Ana', customerEmail: 'ana@example.com', items: [{ productId: 1, qty: 1 }] })
     expect(res.status).toBe(503)
   })
 })
@@ -71,16 +84,45 @@ function fakeProductsStore(products: Product[]): ProductsStore {
   return { listActive: vi.fn().mockResolvedValue(products) }
 }
 
-function fakeOrdersStore(nextId = 1): OrdersStore {
-  return { create: vi.fn().mockResolvedValue({ id: nextId }) }
+function fakeOrdersStore(nextId = 1): OrdersStore & { attachPayment: ReturnType<typeof vi.fn> } {
+  return {
+    create: vi.fn().mockResolvedValue({ id: nextId }),
+    attachPayment: vi.fn().mockResolvedValue(undefined),
+    markPaidByCheckoutId: vi.fn().mockResolvedValue(null),
+  }
 }
 
-function buildShopApp(productsStore: ProductsStore | null, ordersStore: OrdersStore | null, mailer?: Mailer) {
+function fakeAbacatePayClient(link: Partial<PaymentLink> = {}): AbacatePayClient & { createPaymentLink: ReturnType<typeof vi.fn> } {
+  return {
+    createPaymentLink: vi.fn().mockResolvedValue({
+      checkoutId: 'bill_fake123',
+      url: 'https://app.abacatepay.com/pay/bill_fake123',
+      status: 'PENDING',
+      ...link,
+    }),
+  }
+}
+
+function buildShopApp(
+  productsStore: ProductsStore | null,
+  ordersStore: OrdersStore | null,
+  opts: { mailer?: Mailer; abacatePayClient?: AbacatePayClient | null; storefrontUrl?: string | null } = {}
+) {
   const app = express()
   app.use(express.json())
   const eventLog = new InMemoryEventLogStore()
-  const sendMock = mailer ?? ({ send: vi.fn().mockResolvedValue(undefined) } as Mailer)
-  app.use('/', shopRouter({ productsStore, ordersStore, eventLog, mailer: sendMock }))
+  const sendMock = opts.mailer ?? ({ send: vi.fn().mockResolvedValue(undefined) } as Mailer)
+  app.use(
+    '/',
+    shopRouter({
+      productsStore,
+      ordersStore,
+      eventLog,
+      mailer: sendMock,
+      abacatePayClient: opts.abacatePayClient ?? null,
+      storefrontUrl: opts.storefrontUrl ?? null,
+    })
+  )
   return { app, eventLog, mailer: sendMock }
 }
 
@@ -105,31 +147,102 @@ describe('shopRouter — /orders (integração)', () => {
     customerName: 'Ana Silva',
     customerEmail: 'ana@example.com',
     customerPhone: '11999999999',
-    items: [{ productId: 1, name: 'Conjunto Aerobic Steel', price: 429, qty: 1 }],
-    total: 429,
+    items: [{ productId: 1, qty: 1 }],
   }
 
   it('rejeita corpo sem os campos obrigatórios', async () => {
-    const { app } = buildShopApp(null, fakeOrdersStore())
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
     const res = await request(app).post('/orders').send({ customerName: 'Ana' })
     expect(res.status).toBe(400)
+  })
+
+  it('rejeita item malformado (sem productId numérico ou qty positivo)', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, items: [{ productId: '1', qty: 0 }] })
+    expect(res.status).toBe(400)
+  })
+
+  it('IGNORA preço/total enviados pelo cliente e recalcula do catálogo real', async () => {
+    const orders = fakeOrdersStore(42)
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders)
+    // Cliente tenta mandar um preço manipulado — deve ser ignorado por completo.
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, items: [{ productId: 1, qty: 1, price: 1, name: 'grátis' }] })
+
+    expect(res.status).toBe(201)
+    expect(res.body.subtotal).toBe(429) // preço real do catálogo, não o "1" enviado
+    expect(res.body.total).toBe(429)
+    expect(orders.create).toHaveBeenCalledWith(
+      expect.objectContaining({ items: [{ productId: 1, name: SAMPLE_PRODUCT.name, price: 429, qty: 1 }], subtotal: 429, total: 429 })
+    )
+  })
+
+  it('usa o preço promocional quando existe', async () => {
+    const orders = fakeOrdersStore(1)
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT_PROMO]), orders)
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, items: [{ productId: 2, qty: 1 }] })
+    expect(res.status).toBe(201)
+    expect(res.body.subtotal).toBe(399)
+  })
+
+  it('rejeita productId inexistente no catálogo', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, items: [{ productId: 999, qty: 1 }] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/não encontrado/)
+  })
+
+  it('rejeita quantidade acima do estoque disponível (409)', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT_PROMO]), fakeOrdersStore())
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, items: [{ productId: 2, qty: 999 }] })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toMatch(/[Ee]stoque/)
+  })
+
+  it('aplica o cupão THYMOS10 corretamente (10% de desconto)', async () => {
+    const orders = fakeOrdersStore(7)
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders)
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, couponCode: 'thymos10' }) // minúsculo/misto — precisa normalizar
+
+    expect(res.status).toBe(201)
+    expect(res.body.subtotal).toBe(429)
+    expect(res.body.discount).toBe(43) // round(429 * 0.10)
+    expect(res.body.total).toBe(386)
+    expect(res.body.couponApplied).toBe('THYMOS10')
+    expect(orders.create).toHaveBeenCalledWith(expect.objectContaining({ couponCode: 'THYMOS10', discount: 43, total: 386 }))
+  })
+
+  it('ignora cupão inválido em vez de rejeitar o pedido inteiro', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, couponCode: 'CUPOMFALSO' })
+
+    expect(res.status).toBe(201)
+    expect(res.body.discount).toBe(0)
+    expect(res.body.total).toBe(429)
+    expect(res.body.couponApplied).toBeNull()
   })
 
   it('cria o pedido, registra no log e notifica por e-mail', async () => {
     const orders = fakeOrdersStore(42)
     const mailer = { send: vi.fn().mockResolvedValue(undefined) }
-    const { app, eventLog } = buildShopApp(null, orders, mailer)
+    const { app, eventLog } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { mailer })
     const res = await request(app).post('/orders').send(validBody)
 
     expect(res.status).toBe(201)
-    expect(res.body).toEqual({ success: true, orderId: 42 })
-    expect(orders.create).toHaveBeenCalledWith({
-      customerName: validBody.customerName,
-      customerEmail: validBody.customerEmail,
-      customerPhone: validBody.customerPhone,
-      items: validBody.items,
-      total: validBody.total,
-    })
+    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, paymentUrl: null })
     expect(mailer.send).toHaveBeenCalledTimes(1)
     expect(mailer.send.mock.calls[0][0]).toMatch(/42/)
 
@@ -138,9 +251,63 @@ describe('shopRouter — /orders (integração)', () => {
   })
 
   it('responde 503 sem quebrar quando salvar o pedido falha', async () => {
-    const failing: OrdersStore = { create: vi.fn().mockRejectedValue(new Error('boom')) }
-    const { app } = buildShopApp(null, failing)
+    const failing: OrdersStore = {
+      create: vi.fn().mockRejectedValue(new Error('boom')),
+      attachPayment: vi.fn(),
+      markPaidByCheckoutId: vi.fn(),
+    }
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), failing)
     const res = await request(app).post('/orders').send(validBody)
     expect(res.status).toBe(503)
+  })
+
+  describe('link de pagamento (AbacatePay)', () => {
+    it('gera o link de pagamento e grava no pedido quando o cliente está configurado', async () => {
+      const orders = fakeOrdersStore(10)
+      const abacatePayClient = fakeAbacatePayClient()
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
+
+      const res = await request(app).post('/orders').send(validBody)
+
+      expect(res.status).toBe(201)
+      expect(res.body.paymentUrl).toBe('https://app.abacatepay.com/pay/bill_fake123')
+      expect(abacatePayClient.createPaymentLink).toHaveBeenCalledWith(
+        expect.objectContaining({ priceCents: 42900, externalId: 'pedido-10' })
+      )
+      expect(orders.attachPayment).toHaveBeenCalledWith(
+        10,
+        expect.objectContaining({ provider: 'abacatepay', checkoutId: 'bill_fake123', url: 'https://app.abacatepay.com/pay/bill_fake123' })
+      )
+    })
+
+    it('usa o total JÁ com desconto (cupão) para calcular o valor em centavos do link', async () => {
+      const orders = fakeOrdersStore(11)
+      const abacatePayClient = fakeAbacatePayClient()
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
+
+      await request(app).post('/orders').send({ ...validBody, couponCode: 'THYMOS10' })
+
+      expect(abacatePayClient.createPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ priceCents: 38600 })) // 386,00 em centavos
+    })
+
+    it('NUNCA falha o pedido inteiro se a geração do link de pagamento der erro', async () => {
+      const orders = fakeOrdersStore(12)
+      const abacatePayClient: AbacatePayClient = { createPaymentLink: vi.fn().mockRejectedValue(new Error('AbacatePay fora do ar')) }
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
+
+      const res = await request(app).post('/orders').send(validBody)
+
+      expect(res.status).toBe(201)
+      expect(res.body.paymentUrl).toBeNull()
+      expect(orders.attachPayment).not.toHaveBeenCalled()
+    })
+
+    it('não tenta gerar link quando abacatePayClient é null (não configurado)', async () => {
+      const orders = fakeOrdersStore(13)
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient: null })
+      const res = await request(app).post('/orders').send(validBody)
+      expect(res.status).toBe(201)
+      expect(res.body.paymentUrl).toBeNull()
+    })
   })
 })

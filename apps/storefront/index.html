@@ -671,9 +671,12 @@ function closeWelcome(){
 function handleWbForm(e){
   e.preventDefault();
   // Ativa de fato o cupão THYMOS10 anunciado no popup — antes só fechava a
-  // caixa sem aplicar nada. cartDiscount/updateCartUI vêm de script.js
-  // (mesmo escopo global de módulo clássico do documento).
+  // caixa sem aplicar nada. cartDiscount/appliedCouponCode/updateCartUI vêm
+  // de script.js (mesmo escopo global de módulo clássico do documento) —
+  // appliedCouponCode precisa ir junto: é o que o checkout manda pro
+  // servidor validar de verdade (ver submitOrder()).
   cartDiscount = 0.10;
+  appliedCouponCode = 'THYMOS10';
   updateCartUI();
   // O código só é revelado aqui — depois do e-mail confirmado — em vez de
   // já vir escrito em texto puro no HTML desde a abertura do popup (o que

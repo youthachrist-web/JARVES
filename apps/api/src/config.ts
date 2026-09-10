@@ -24,6 +24,17 @@ export interface AppConfig {
    * encaminhar o "app incorporado" da Nuvemshop para o painel de verdade em
    * vez de uma página estática — ver routes/nuvemshop.ts. */
   adminAppUrl: string | null
+  /** Chave secreta da AbacatePay (ver lib/abacatepay.ts) — gera o link de
+   * pagamento real do checkout. Sem ela, o pedido ainda é capturado
+   * normalmente, só sem link de pagamento automático. */
+  abacatePayApiKey: string | null
+  /** Segredo usado para validar `?webhookSecret=` nas notificações de
+   * pagamento confirmado (ver routes/webhooks.ts) — precisa ser o mesmo
+   * valor configurado no cadastro do webhook no painel da AbacatePay. */
+  abacatePayWebhookSecret: string | null
+  /** URL pública do storefront (apps/storefront) — para onde a AbacatePay
+   * redireciona o cliente ao voltar ou concluir o pagamento. */
+  storefrontUrl: string | null
 }
 
 /**
@@ -88,6 +99,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     )
   }
 
+  const abacatePayApiKey = env.ABACATEPAY_API_KEY || null
+  if (!abacatePayApiKey) {
+    logger.warn('ABACATEPAY_API_KEY não configurada — checkout vai capturar o pedido mas sem link de pagamento automático.')
+  }
+
   return {
     port: Number(env.PORT || 3000),
     corsAllowedOrigins,
@@ -98,5 +114,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     nuvemshop,
     smtp,
     adminAppUrl,
+    abacatePayApiKey,
+    abacatePayWebhookSecret: env.ABACATEPAY_WEBHOOK_SECRET || null,
+    storefrontUrl: env.STOREFRONT_URL || null,
   }
 }

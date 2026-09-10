@@ -5,7 +5,7 @@
  * qualquer chamada a `record`.
  */
 export type EventLevel = 'info' | 'warn' | 'error'
-export type EventCategory = 'sync' | 'webhook' | 'oauth' | 'admin' | 'order'
+export type EventCategory = 'sync' | 'webhook' | 'oauth' | 'admin' | 'order' | 'payment'
 
 export interface LogEvent {
   id: string
