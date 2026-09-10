@@ -344,6 +344,12 @@ const FREE_SHIPPING   = 299;   // valor mínimo para frete grátis
 const DISCOUNT_CODE   = 'THYMOS10'; // cupão de 10%
 let cart              = [];
 let cartDiscount      = 0;
+// Código do cupão aplicado no momento — cartDiscount é só o fator numérico
+// (0.10) usado para mostrar o total na tela; o checkout manda este código
+// para o servidor, que recalcula o desconto de verdade a partir dele (ver
+// submitOrder() e apps/api/src/routes/shop.ts). Nunca confiamos no total
+// calculado aqui para o valor cobrado de fato.
+let appliedCouponCode = null;
 
 // ── DOM ──
 const hamburger    = document.getElementById('hamburger');
@@ -1021,10 +1027,12 @@ function applyCoupon() {
   if (!input || !msg) return;
   if (input.value.trim().toUpperCase() === DISCOUNT_CODE) {
     cartDiscount = 0.10;
+    appliedCouponCode = DISCOUNT_CODE;
     msg.textContent = '✓ Cupão THYMOS10 aplicado — 10% de desconto!';
     msg.className = 'coupon-msg ok';
   } else {
     cartDiscount = 0;
+    appliedCouponCode = null;
     msg.textContent = '✗ Cupão inválido.';
     msg.className = 'coupon-msg err';
   }
@@ -1179,12 +1187,14 @@ async function submitOrder(e) {
     return;
   }
 
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const total = Math.round(subtotal * (1 - cartDiscount));
-
   submitBtn.disabled = true;
   submitBtn.textContent = 'Enviando...';
   try {
+    // Só id + quantidade — preço e nome vêm sempre do catálogo real no
+    // servidor (nunca confiamos no que o cliente manda aqui, ver
+    // apps/api/src/routes/shop.ts). O couponCode é só um pedido de
+    // validação: quem decide se ele é válido e qual o desconto real
+    // também é o servidor.
     const res = await fetch(`${apiBaseUrl}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1192,19 +1202,32 @@ async function submitOrder(e) {
         customerName,
         customerEmail,
         customerPhone: customerPhone || undefined,
-        items: cart.map(i => ({ productId: i.id, name: i.name, price: i.price, qty: i.qty })),
-        total,
+        items: cart.map(i => ({ productId: i.id, qty: i.qty })),
+        couponCode: appliedCouponCode || undefined,
       }),
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
 
-    if (msg) { msg.textContent = `✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.`; msg.className = 'coupon-msg ok'; }
     document.getElementById('checkout-form').style.display = 'none';
     document.getElementById('checkout-form').reset();
     document.getElementById('checkout-btn').style.display = '';
     cart = [];
+    cartDiscount = 0;
+    appliedCouponCode = null;
     updateCartUI();
+
+    if (data.paymentUrl) {
+      // Link de pagamento real gerado (AbacatePay) — leva o cliente direto
+      // para pagar. O pedido já está salvo, então mesmo se ele fechar a
+      // aba aqui, o link continua acessível e válido.
+      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} confirmado! Redirecionando para o pagamento...`; msg.className = 'coupon-msg ok'; }
+      window.location.href = data.paymentUrl;
+    } else {
+      // Sem link automático (integração de pagamento não configurada neste
+      // ambiente) — mesma mensagem de sempre, a loja entra em contato.
+      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.`; msg.className = 'coupon-msg ok'; }
+    }
   } catch (err) {
     if (msg) { msg.textContent = 'Não foi possível registrar o pedido agora. Tente novamente em instantes.'; msg.className = 'coupon-msg err'; }
     console.warn('Falha ao enviar pedido:', err.message);

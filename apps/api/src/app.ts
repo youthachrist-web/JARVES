@@ -17,6 +17,7 @@ import { createMailer } from './lib/mailer.js'
 import { shopRouter } from './routes/shop.js'
 import { SupabaseProductsStore, type ProductsStore } from './store/productsStore.js'
 import { SupabaseOrdersStore, type OrdersStore } from './store/ordersStore.js'
+import { createAbacatePayClient } from './lib/abacatepay.js'
 import { logger } from './logger.js'
 
 export interface CreateAppDeps {
@@ -78,6 +79,11 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   const ordersStore: OrdersStore | null =
     config.supabaseUrl && config.supabaseServiceRoleKey ? new SupabaseOrdersStore(config.supabaseUrl, config.supabaseServiceRoleKey) : null
 
+  // Gera o link de pagamento real do checkout (ver lib/abacatepay.ts). null
+  // sem ABACATEPAY_API_KEY configurada — o pedido continua sendo capturado
+  // normalmente, só sem link automático (routes/shop.ts trata esse caso).
+  const abacatePayClient = createAbacatePayClient(config.abacatePayApiKey)
+
   app.disable('x-powered-by')
   // Necessário para que req.protocol reflita `https` corretamente atrás do
   // proxy do Railway (a conexão interna ao container é HTTP puro; sem isso,
@@ -93,10 +99,10 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   // reparseado) — por isso é aplicado globalmente, antes de qualquer rota.
   app.use(captureRawBody)
 
-  app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore, mailer }))
+  app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore, mailer, ordersStore }))
   app.use('/', healthRouter(config))
   app.use('/nuvemshop', nuvemshopRouter({ config, credentialsStore, eventLog }))
-  app.use('/', shopRouter({ productsStore, ordersStore, eventLog, mailer }))
+  app.use('/', shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient, storefrontUrl: config.storefrontUrl }))
 
   app.use(notFoundHandler)
   app.use(errorHandler)
@@ -105,6 +111,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
     nuvemshopConfigured: !!config.nuvemshop,
     supabaseConfigured: !!config.supabaseUrl,
     smtpConfigured: !!config.smtp,
+    abacatePayConfigured: !!abacatePayClient,
   })
 
   return app

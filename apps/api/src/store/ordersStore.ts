@@ -10,20 +10,48 @@ export interface NewOrder {
   customerEmail: string
   customerPhone?: string
   items: OrderItem[]
+  /** Soma dos itens (preço real do catálogo × quantidade), antes do cupom. */
+  subtotal: number
+  /** Valor abatido pelo cupom, em reais — 0 quando não há cupom válido. */
+  discount: number
+  /** subtotal - discount. Este é o valor que vira o link de pagamento. */
+  total: number
+  /** Código do cupom aplicado (já normalizado), ou null se nenhum. */
+  couponCode: string | null
+}
+
+export interface PaymentInfo {
+  provider: string
+  checkoutId: string
+  url: string
+  status: string
+}
+
+export interface PaidOrderInfo {
+  id: number
+  customerEmail: string
+  customerName: string
   total: number
 }
 
 export interface OrdersStore {
   create(order: NewOrder): Promise<{ id: number }>
+  /** Grava o link/id de pagamento gerado após o pedido já existir (a
+   * AbacatePay usa o id do próprio pedido como `externalId`, então o pedido
+   * precisa existir primeiro). */
+  attachPayment(orderId: number, payment: PaymentInfo): Promise<void>
+  /** Chamado pelo webhook de confirmação de pagamento — casa pelo
+   * `checkoutId` da AbacatePay e marca como pago. Retorna null se não achar
+   * (ex.: reentrega de um webhook de pedido já removido). */
+  markPaidByCheckoutId(checkoutId: string): Promise<PaidOrderInfo | null>
 }
 
 /**
  * Grava pedidos capturados pelo storefront (apps/storefront) na tabela
- * `pedidos` do Supabase. Deliberadamente simples (sem gateway de pagamento):
- * o "checkout" aqui é uma captura de pedido + notificação por e-mail — o
- * lojista entra em contato para confirmar pagamento/frete, um modelo comum
- * para operações que ainda não têm um meio de pagamento próprio integrado.
- * Ver routes/shop.ts.
+ * `pedidos` do Supabase, incluindo cupom aplicado e dados do link de
+ * pagamento da AbacatePay (ver lib/abacatepay.ts e routes/shop.ts). O total
+ * gravado aqui é sempre o recalculado no servidor a partir do catálogo real
+ * — nunca o valor que o cliente mandou.
  */
 export class SupabaseOrdersStore implements OrdersStore {
   constructor(
@@ -50,11 +78,45 @@ export class SupabaseOrdersStore implements OrdersStore {
         cliente_email: order.customerEmail,
         cliente_telefone: order.customerPhone ?? null,
         itens: order.items,
+        subtotal: order.subtotal,
+        cupom: order.couponCode,
+        desconto: order.discount,
         total: order.total,
+        pagamento_status: 'pendente',
       }),
     })
     if (!res.ok) throw new Error(`Falha ao salvar pedido no Supabase (status ${res.status})`)
     const rows = (await res.json()) as Array<{ id: number }>
     return { id: rows[0].id }
+  }
+
+  async attachPayment(orderId: number, payment: PaymentInfo): Promise<void> {
+    const res = await this.fetchImpl(`${this.supabaseUrl}/rest/v1/pedidos?id=eq.${orderId}`, {
+      method: 'PATCH',
+      headers: this.headers(),
+      body: JSON.stringify({
+        pagamento_provedor: payment.provider,
+        pagamento_checkout_id: payment.checkoutId,
+        pagamento_link: payment.url,
+        pagamento_status: payment.status,
+      }),
+    })
+    if (!res.ok) throw new Error(`Falha ao gravar dados de pagamento no Supabase (status ${res.status})`)
+  }
+
+  async markPaidByCheckoutId(checkoutId: string): Promise<PaidOrderInfo | null> {
+    const res = await this.fetchImpl(
+      `${this.supabaseUrl}/rest/v1/pedidos?pagamento_checkout_id=eq.${encodeURIComponent(checkoutId)}`,
+      {
+        method: 'PATCH',
+        headers: this.headers({ Prefer: 'return=representation' }),
+        body: JSON.stringify({ pagamento_status: 'pago' }),
+      }
+    )
+    if (!res.ok) throw new Error(`Falha ao marcar pedido como pago no Supabase (status ${res.status})`)
+    const rows = (await res.json()) as Array<{ id: number; cliente_email: string; cliente_nome: string; total: number }>
+    if (rows.length === 0) return null
+    const row = rows[0]
+    return { id: row.id, customerEmail: row.cliente_email, customerName: row.cliente_nome, total: row.total }
   }
 }
