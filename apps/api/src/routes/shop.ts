@@ -218,7 +218,12 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
           description: `Pedido Thymos #${orderId}`,
           externalId: `pedido-${orderId}`,
           expiresIn: 1800, // 30 minutos
-          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || undefined, taxId: normalizedTaxId },
+          // `cellphone` sempre como string (mesmo vazia) — testado em
+          // produção: a AbacatePay recusa a cobrança inteira ("Value should
+          // be one of 'object', 'object'") quando esse campo vem `undefined`
+          // ou `null`, apesar de documentado como opcional. Uma string vazia
+          // funciona normalmente.
+          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || '', taxId: normalizedTaxId },
         })
         await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
         pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }

@@ -323,6 +323,21 @@ describe('shopRouter — /orders (integração)', () => {
       )
     })
 
+    it('manda cellphone como string vazia (nunca undefined) quando o cliente não informa WhatsApp — regressão: a AbacatePay recusa a cobrança inteira sem esse campo', async () => {
+      const orders = fakeOrdersStore(14)
+      const abacatePayClient = fakeAbacatePayClient()
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
+      const { customerPhone: _customerPhone, ...bodySemTelefone } = validBody
+
+      const res = await request(app).post('/orders').send(bodySemTelefone)
+
+      expect(res.status).toBe(201)
+      expect(res.body.pix).not.toBeNull()
+      expect(abacatePayClient.createPixCharge).toHaveBeenCalledWith(
+        expect.objectContaining({ customer: expect.objectContaining({ cellphone: '' }) })
+      )
+    })
+
     it('usa o total JÁ com desconto (cupão) para calcular o valor em centavos da cobrança', async () => {
       const orders = fakeOrdersStore(11)
       const abacatePayClient = fakeAbacatePayClient()
