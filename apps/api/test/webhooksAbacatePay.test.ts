@@ -30,6 +30,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     adminAppUrl: null,
     nuvemshop: null,
     abacatePayApiKey: null,
+    abacatePayCardEnabled: false,
     abacatePayWebhookSecret: WEBHOOK_SECRET,
     storefrontUrl: null,
     ...overrides,

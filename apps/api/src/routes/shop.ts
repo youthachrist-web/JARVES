@@ -15,11 +15,14 @@ export interface ShopRouterDeps {
    * capturado normalmente, só sem link de pagamento automático (ver
    * lib/abacatepay.ts). */
   abacatePayClient: AbacatePayClient | null
-  /** Não usada pelo checkout Pix transparente atual (não há redirecionamento
-   * nem returnUrl/completionUrl); mantida na config só para o dia em que o
-   * link hospedado (createPaymentLink, ver lib/abacatepay.ts) for reativado
-   * — ex.: quando cartão for liberado na conta AbacatePay. */
+  /** Usada só no fluxo de cartão (link hospedado, ver createPaymentLink em
+   * lib/abacatepay.ts) como returnUrl/completionUrl — o Pix transparente não
+   * redireciona, não precisa disso. */
   storefrontUrl: string | null
+  /** ABACATEPAY_CARD_ENABLED — ver config.ts. Desligado até a AbacatePay
+   * homologar cartão para a conta; enquanto isso GET /payment-methods
+   * anuncia `card: false` e POST /orders recusa `paymentMethod: "card"`. */
+  cardEnabled: boolean
 }
 
 /**
@@ -76,7 +79,7 @@ function isValidCPF(raw: string): boolean {
  * há dado sensível sendo exposto aqui (catálogo público + intake de pedido,
  * sem autenticação de admin envolvida de qualquer forma).
  */
-export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient }: ShopRouterDeps): Router {
+export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient, storefrontUrl, cardEnabled }: ShopRouterDeps): Router {
   const router = Router()
 
   function allowAnyOrigin(res: import('express').Response) {
@@ -105,6 +108,18 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
     }
   })
 
+  // Pro storefront saber, sem chumbar no código, se a aba "Cartão de
+  // Crédito" do checkout deve aparecer habilitada — ver ABACATEPAY_CARD_ENABLED
+  // em config.ts. Pix nunca depende disso.
+  router.options('/payment-methods', (_req, res) => {
+    allowAnyOrigin(res)
+    res.status(204).end()
+  })
+  router.get('/payment-methods', (_req, res) => {
+    allowAnyOrigin(res)
+    res.json({ pix: !!abacatePayClient, card: cardEnabled && !!abacatePayClient })
+  })
+
   router.options('/orders', (_req, res) => {
     allowAnyOrigin(res)
     res.status(204).end()
@@ -117,7 +132,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       return
     }
 
-    const { customerName, customerEmail, customerPhone, customerTaxId, items, couponCode } = req.body ?? {}
+    const { customerName, customerEmail, customerPhone, customerTaxId, items, couponCode, paymentMethod } = req.body ?? {}
 
     if (!customerName || !customerEmail || !customerTaxId || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Campos obrigatórios: customerName, customerEmail, customerTaxId (CPF), items (lista não vazia).' })
@@ -128,6 +143,15 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       return
     }
     const normalizedTaxId = customerTaxId.replace(/\D/g, '')
+    if (paymentMethod !== undefined && paymentMethod !== 'pix' && paymentMethod !== 'card') {
+      res.status(400).json({ error: 'paymentMethod deve ser "pix" ou "card".' })
+      return
+    }
+    const wantsCard = paymentMethod === 'card'
+    if (wantsCard && !(cardEnabled && abacatePayClient)) {
+      res.status(400).json({ error: 'Pagamento por cartão de crédito não está disponível no momento — use Pix.' })
+      return
+    }
     if (!items.every(isValidRequestedItem)) {
       res.status(400).json({ error: 'Cada item precisa de productId (número) e qty (inteiro positivo).' })
       return
@@ -197,48 +221,59 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       detail: { id: orderId, customerEmail, subtotal, discount, total, couponCode: appliedCoupon },
     })
 
-    // Checkout Pix transparente: melhor esforço — uma falha aqui NUNCA deve
-    // fazer o pedido inteiro falhar, já que ele já foi capturado com sucesso
-    // acima. Sem ABACATEPAY_API_KEY configurada, abacatePayClient é null e o
-    // pedido segue exatamente como antes desta integração (sem Pix
-    // automático). QR Code/copia-e-cola nunca são persistidos — só vivem
-    // nesta resposta; o que persiste é o checkoutId (pro webhook casar o
-    // pagamento confirmado, ver routes/webhooks.ts).
+    // Geração do pagamento: melhor esforço — uma falha aqui NUNCA deve fazer
+    // o pedido inteiro falhar, já que ele já foi capturado com sucesso acima.
+    // Sem ABACATEPAY_API_KEY configurada, abacatePayClient é null e o pedido
+    // segue sem cobrança automática. Pix (padrão) fica transparente — QR
+    // Code/copia-e-cola nunca são persistidos, só o checkoutId (pro webhook
+    // casar o pagamento, ver routes/webhooks.ts). Cartão (wantsCard, só
+    // possível quando cardEnabled — ver ABACATEPAY_CARD_ENABLED em
+    // config.ts) usa o link hospedado da AbacatePay: sai do site, mas é o
+    // único jeito de aceitar cartão até a AbacatePay liberar o método
+    // transparente pra esta conta.
     //
-    // `customer` (com `taxId`) agora é sempre enviado: a AbacatePay recusa a
-    // cobrança inteira ("Value should be one of 'object', 'object'") quando
-    // esse objeto vem sem CPF válido (visto em produção) — por isso o
-    // checkout passou a exigir CPF (validado acima), o que também associa o
-    // nome do cliente ao Pix gerado.
+    // `customer` (com `taxId`) sempre é enviado no Pix: a AbacatePay recusa
+    // a cobrança inteira ("Value should be one of 'object', 'object'")
+    // quando esse objeto vem sem CPF válido, ou com `cellphone` ausente
+    // (mesmo que `undefined` em vez de string vazia) — visto em produção.
     let pix: { checkoutId: string; brCode: string; brCodeBase64: string; expiresAt: string } | null = null
+    let paymentUrl: string | null = null
     if (abacatePayClient && total > 0) {
       try {
-        const charge = await abacatePayClient.createPixCharge({
-          amountCents: Math.round(total * 100),
-          description: `Pedido Thymos #${orderId}`,
-          externalId: `pedido-${orderId}`,
-          expiresIn: 1800, // 30 minutos
-          // `cellphone` sempre como string (mesmo vazia) — testado em
-          // produção: a AbacatePay recusa a cobrança inteira ("Value should
-          // be one of 'object', 'object'") quando esse campo vem `undefined`
-          // ou `null`, apesar de documentado como opcional. Uma string vazia
-          // funciona normalmente.
-          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || '', taxId: normalizedTaxId },
-        })
-        await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
-        pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }
+        if (wantsCard) {
+          const totalQty = resolvedItems.reduce((s, i) => s + i.qty, 0)
+          const link = await abacatePayClient.createPaymentLink({
+            name: `Pedido Thymos #${orderId} (${totalQty} ${totalQty === 1 ? 'item' : 'itens'})`,
+            priceCents: Math.round(total * 100),
+            externalId: `pedido-${orderId}`,
+            returnUrl: storefrontUrl ?? undefined,
+            completionUrl: storefrontUrl ?? undefined,
+          })
+          await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: link.checkoutId, url: link.url, status: link.status })
+          paymentUrl = link.url
+        } else {
+          const charge = await abacatePayClient.createPixCharge({
+            amountCents: Math.round(total * 100),
+            description: `Pedido Thymos #${orderId}`,
+            externalId: `pedido-${orderId}`,
+            expiresIn: 1800, // 30 minutos
+            customer: { name: customerName, email: customerEmail, cellphone: customerPhone || '', taxId: normalizedTaxId },
+          })
+          await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
+          pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }
+        }
       } catch (err) {
-        logger.error('Falha ao gerar cobrança Pix AbacatePay', { orderId, message: (err as Error).message })
+        logger.error(`Falha ao gerar ${wantsCard ? 'link de pagamento (cartão)' : 'cobrança Pix'} AbacatePay`, { orderId, message: (err as Error).message })
         await eventLog.record({
           level: 'error',
           category: 'payment',
-          message: `Falha ao gerar cobrança Pix para o pedido #${orderId}`,
+          message: `Falha ao gerar pagamento (${wantsCard ? 'cartão' : 'pix'}) para o pedido #${orderId}`,
           detail: { orderId, error: (err as Error).message },
         })
       }
     }
 
-    res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, pix })
+    res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, pix, paymentUrl })
 
     // E-mail de notificação: melhor esforço, disparado depois da resposta ao
     // cliente e nunca aguardado por ela — um SMTP lento ou fora do ar (visto
@@ -251,6 +286,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
           `Subtotal: R$ ${subtotal.toLocaleString('pt-BR')}${appliedCoupon ? `\nCupão: ${appliedCoupon} (-R$ ${discount.toLocaleString('pt-BR')})` : ''}\n` +
           `Total: R$ ${total.toLocaleString('pt-BR')}\n` +
           (pix ? `Cobrança Pix gerada (checkout ${pix.checkoutId})\n` : '') +
+          (paymentUrl ? `Link de pagamento (cartão): ${paymentUrl}\n` : '') +
           `\nItens:\n${resolvedItems.map((i) => `- ${i.qty}x ${i.name} — R$ ${i.price.toLocaleString('pt-BR')}`).join('\n')}`
       )
       .catch((err) => {

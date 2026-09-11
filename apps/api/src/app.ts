@@ -102,7 +102,18 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   app.use('/webhooks', webhooksRouter({ config, credentialsStore, eventLog, idempotencyStore, mailer, ordersStore }))
   app.use('/', healthRouter(config))
   app.use('/nuvemshop', nuvemshopRouter({ config, credentialsStore, eventLog }))
-  app.use('/', shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient, storefrontUrl: config.storefrontUrl }))
+  app.use(
+    '/',
+    shopRouter({
+      productsStore,
+      ordersStore,
+      eventLog,
+      mailer,
+      abacatePayClient,
+      storefrontUrl: config.storefrontUrl,
+      cardEnabled: config.abacatePayCardEnabled,
+    })
+  )
 
   app.use(notFoundHandler)
   app.use(errorHandler)

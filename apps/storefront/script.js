@@ -1155,8 +1155,24 @@ document.getElementById('cart-shop-link')?.addEventListener('click', closeCart);
 // ══════════════════════
 let checkoutCustomer = null;
 let checkoutOrderId = null;
+let selectedPaymentMethod = 'pix';
 let pixPollTimer = null;
 let pixCountdownTimer = null;
+// Preenchido por fetchPaymentMethods() (disparado ao abrir o checkout) —
+// controla se a aba "Cartão de Crédito" aparece habilitada, sem precisar de
+// nenhuma mudança de código quando a AbacatePay liberar cartão pra conta
+// (ver GET /payment-methods em apps/api/src/routes/shop.ts). Só Pix até lá.
+let paymentMethods = { pix: true, card: false };
+
+async function fetchPaymentMethods() {
+  const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
+  if (!apiBaseUrl) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/payment-methods`);
+    if (!res.ok) return;
+    paymentMethods = await res.json();
+  } catch { /* mantém o padrão (só Pix) se a consulta falhar */ }
+}
 
 function formatBRL(n) {
   return `R$${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
@@ -1264,6 +1280,8 @@ function openCheckoutPage() {
 
   checkoutCustomer = null;
   checkoutOrderId = null;
+  selectedPaymentMethod = 'pix';
+  fetchPaymentMethods(); // não bloqueia a abertura — a resposta chega bem antes do passo 2
   setCheckoutStep(1);
 }
 
@@ -1334,31 +1352,48 @@ function wireStep1() {
 }
 
 // ── Passo 2: Pagamento ──
+// A aba Cartão só aparece habilitada quando paymentMethods.card === true
+// (ver fetchPaymentMethods/GET /payment-methods) — enquanto a AbacatePay não
+// homologar cartão pra conta, fica com o badge "Em breve" e desabilitada,
+// nunca oferecendo um método que na prática não processa.
 function renderStep2HTML() {
+  const cardOn = !!paymentMethods.card;
+  const pixActive = selectedPaymentMethod === 'pix';
   return `
     <h2 class="cp-step-title">Forma de pagamento</h2>
     <div class="cp-pay-tabs">
-      <button class="cp-pay-tab active" type="button">
+      <button class="cp-pay-tab${pixActive ? ' active' : ''}" type="button" data-method="pix">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L22 12 L12 22 L2 12 Z"/></svg>
         Pix <span class="cp-tab-badge instant">Instantâneo</span>
       </button>
-      <button class="cp-pay-tab disabled" type="button" disabled title="Em breve — por enquanto pague com Pix, é instantâneo.">
+      <button class="cp-pay-tab${cardOn ? (pixActive ? '' : ' active') : ' disabled'}" type="button" data-method="card"
+        ${cardOn ? '' : 'disabled title="Em breve — por enquanto pague com Pix, é instantâneo."'}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        Cartão de Crédito <span class="cp-tab-badge soon">Em breve</span>
+        Cartão de Crédito ${cardOn ? '' : '<span class="cp-tab-badge soon">Em breve</span>'}
       </button>
     </div>
     <div class="cp-pay-panel" id="cp-pay-panel">
-      <div class="cp-pix-loading"><span class="pix-spinner"></span> Gerando cobrança Pix...</div>
+      <div class="cp-pix-loading"><span class="pix-spinner"></span> ${pixActive ? 'Gerando cobrança Pix...' : 'Gerando link de pagamento...'}</div>
     </div>
     <button class="cp-back-btn" id="cp-back-to-dados" type="button">← Voltar para os dados</button>`;
 }
 
 function wireStep2() {
   document.getElementById('cp-back-to-dados')?.addEventListener('click', () => setCheckoutStep(1));
-  createPixOrder();
+  document.querySelectorAll('.cp-pay-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.disabled || tab.dataset.method === selectedPaymentMethod) return;
+      selectedPaymentMethod = tab.dataset.method;
+      document.querySelectorAll('.cp-pay-tab').forEach(t => t.classList.toggle('active', t.dataset.method === selectedPaymentMethod));
+      const panel = document.getElementById('cp-pay-panel');
+      if (panel) panel.innerHTML = `<div class="cp-pix-loading"><span class="pix-spinner"></span> ${selectedPaymentMethod === 'pix' ? 'Gerando cobrança Pix...' : 'Gerando link de pagamento...'}</div>`;
+      createOrder();
+    });
+  });
+  createOrder();
 }
 
-async function createPixOrder() {
+async function createOrder() {
   const panel = document.getElementById('cp-pay-panel');
   const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
   if (!apiBaseUrl) {
@@ -1381,6 +1416,7 @@ async function createPixOrder() {
         customerTaxId: checkoutCustomer.cpf,
         items: cart.map(i => ({ productId: i.id, qty: i.qty })),
         couponCode: appliedCouponCode || undefined,
+        paymentMethod: selectedPaymentMethod,
       }),
     });
     const data = await res.json().catch(() => null);
@@ -1396,6 +1432,11 @@ async function createPixOrder() {
       renderPixPanel(data.pix);
       startPixCountdown(data.pix.expiresAt);
       startPixPolling(data.orderId, apiBaseUrl);
+    } else if (data.paymentUrl) {
+      // Cartão: link hospedado da AbacatePay — sai do site pra pagar (única
+      // forma de aceitar cartão até o método transparente ser liberado).
+      if (panel) panel.innerHTML = `<p class="cp-pix-error" style="color:var(--nude-dark)">Redirecionando para o pagamento seguro...</p>`;
+      window.location.href = data.paymentUrl;
     } else {
       // Sem cobrança automática (integração de pagamento não configurada
       // neste ambiente) — o pedido já foi registrado, a loja entra em contato.
@@ -1406,9 +1447,9 @@ async function createPixOrder() {
       panel.innerHTML = `
         <p class="cp-pix-error">Não foi possível gerar o pagamento agora. Tente novamente.</p>
         <button class="cp-retry-btn" id="cp-pix-retry" type="button">Tentar novamente</button>`;
-      document.getElementById('cp-pix-retry')?.addEventListener('click', createPixOrder);
+      document.getElementById('cp-pix-retry')?.addEventListener('click', createOrder);
     }
-    console.warn('Falha ao criar pedido/Pix:', err.message);
+    console.warn('Falha ao criar pedido:', err.message);
   }
 }
 
