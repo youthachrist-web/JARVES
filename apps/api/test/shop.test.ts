@@ -93,9 +93,15 @@ function fakeOrdersStore(nextId = 1, status: 'pendente' | 'pago' | null = 'pende
   }
 }
 
-function fakeAbacatePayClient(charge: Partial<PixCharge> = {}): AbacatePayClient & { createPixCharge: ReturnType<typeof vi.fn> } {
+function fakeAbacatePayClient(
+  charge: Partial<PixCharge> = {}
+): AbacatePayClient & { createPixCharge: ReturnType<typeof vi.fn>; createPaymentLink: ReturnType<typeof vi.fn> } {
   return {
-    createPaymentLink: vi.fn(),
+    createPaymentLink: vi.fn().mockResolvedValue({
+      checkoutId: 'bill_fake123',
+      url: 'https://app.abacatepay.com/pay/bill_fake123',
+      status: 'PENDING',
+    }),
     createPixCharge: vi.fn().mockResolvedValue({
       checkoutId: 'pix_char_fake123',
       brCode: '00020160014BR.GOV.BCB.PIX070503***6304ABCD',
@@ -110,7 +116,7 @@ function fakeAbacatePayClient(charge: Partial<PixCharge> = {}): AbacatePayClient
 function buildShopApp(
   productsStore: ProductsStore | null,
   ordersStore: OrdersStore | null,
-  opts: { mailer?: Mailer; abacatePayClient?: AbacatePayClient | null; storefrontUrl?: string | null } = {}
+  opts: { mailer?: Mailer; abacatePayClient?: AbacatePayClient | null; storefrontUrl?: string | null; cardEnabled?: boolean } = {}
 ) {
   const app = express()
   app.use(express.json())
@@ -125,6 +131,7 @@ function buildShopApp(
       mailer: sendMock,
       abacatePayClient: opts.abacatePayClient ?? null,
       storefrontUrl: opts.storefrontUrl ?? null,
+      cardEnabled: opts.cardEnabled ?? false,
     })
   )
   return { app, eventLog, mailer: sendMock }
@@ -257,7 +264,7 @@ describe('shopRouter — /orders (integração)', () => {
     const res = await request(app).post('/orders').send(validBody)
 
     expect(res.status).toBe(201)
-    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, pix: null })
+    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, pix: null, paymentUrl: null })
     expect(mailer.send).toHaveBeenCalledTimes(1)
     expect(mailer.send.mock.calls[0][0]).toMatch(/42/)
 
@@ -370,6 +377,72 @@ describe('shopRouter — /orders (integração)', () => {
       expect(res.status).toBe(201)
       expect(res.body.pix).toBeNull()
     })
+  })
+
+  describe('paymentMethod: "card" (link hospedado, desligado até a AbacatePay homologar cartão)', () => {
+    it('rejeita cartão quando ABACATEPAY_CARD_ENABLED está desligado (padrão)', async () => {
+      const orders = fakeOrdersStore(20)
+      const abacatePayClient = fakeAbacatePayClient()
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient, cardEnabled: false })
+
+      const res = await request(app).post('/orders').send({ ...validBody, paymentMethod: 'card' })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/[Cc]artão/)
+      expect(abacatePayClient.createPaymentLink).not.toHaveBeenCalled()
+      expect(orders.create).not.toHaveBeenCalled()
+    })
+
+    it('gera o link de pagamento hospedado quando cardEnabled está ligado', async () => {
+      const orders = fakeOrdersStore(21)
+      const abacatePayClient = fakeAbacatePayClient()
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient, cardEnabled: true })
+
+      const res = await request(app).post('/orders').send({ ...validBody, paymentMethod: 'card' })
+
+      expect(res.status).toBe(201)
+      expect(res.body.pix).toBeNull()
+      expect(res.body.paymentUrl).toBe('https://app.abacatepay.com/pay/bill_fake123')
+      expect(abacatePayClient.createPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ priceCents: 42900, externalId: 'pedido-21' }))
+      expect(abacatePayClient.createPixCharge).not.toHaveBeenCalled()
+      expect(orders.attachPayment).toHaveBeenCalledWith(
+        21,
+        expect.objectContaining({ provider: 'abacatepay', checkoutId: 'bill_fake123', url: 'https://app.abacatepay.com/pay/bill_fake123' })
+      )
+    })
+
+    it('rejeita paymentMethod desconhecido', async () => {
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore(), { cardEnabled: true })
+      const res = await request(app).post('/orders').send({ ...validBody, paymentMethod: 'boleto' })
+      expect(res.status).toBe(400)
+    })
+  })
+})
+
+describe('GET /payment-methods', () => {
+  it('anuncia só Pix quando cardEnabled está desligado (padrão)', async () => {
+    const { app } = buildShopApp(null, null, { abacatePayClient: fakeAbacatePayClient(), cardEnabled: false })
+    const res = await request(app).get('/payment-methods')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ pix: true, card: false })
+  })
+
+  it('anuncia cartão quando cardEnabled está ligado e há cliente AbacatePay configurado', async () => {
+    const { app } = buildShopApp(null, null, { abacatePayClient: fakeAbacatePayClient(), cardEnabled: true })
+    const res = await request(app).get('/payment-methods')
+    expect(res.body).toEqual({ pix: true, card: true })
+  })
+
+  it('anuncia tudo desligado quando a AbacatePay não está configurada', async () => {
+    const { app } = buildShopApp(null, null, { abacatePayClient: null, cardEnabled: true })
+    const res = await request(app).get('/payment-methods')
+    expect(res.body).toEqual({ pix: false, card: false })
+  })
+
+  it('libera CORS para qualquer origem nesta rota', async () => {
+    const { app } = buildShopApp(null, null)
+    const res = await request(app).get('/payment-methods').set('Origin', 'https://youthachrist-web.github.io')
+    expect(res.headers['access-control-allow-origin']).toBe('*')
   })
 })
 

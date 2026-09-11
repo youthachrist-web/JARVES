@@ -27,6 +27,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       scopes: ['read_products'],
     },
     abacatePayApiKey: null,
+    abacatePayCardEnabled: false,
     abacatePayWebhookSecret: null,
     storefrontUrl: null,
     ...overrides,

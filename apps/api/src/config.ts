@@ -28,6 +28,11 @@ export interface AppConfig {
    * pagamento real do checkout. Sem ela, o pedido ainda é capturado
    * normalmente, só sem link de pagamento automático. */
   abacatePayApiKey: string | null
+  /** ABACATEPAY_CARD_ENABLED=true — desligado por padrão até a AbacatePay
+   * homologar cartão para a conta (ver loadConfig). Controla só se a rota
+   * pública GET /payment-methods anuncia `card: true` pro storefront; não
+   * afeta o Pix, que independe deste flag. */
+  abacatePayCardEnabled: boolean
   /** Segredo usado para validar `?webhookSecret=` nas notificações de
    * pagamento confirmado (ver routes/webhooks.ts) — precisa ser o mesmo
    * valor configurado no cadastro do webhook no painel da AbacatePay. */
@@ -104,6 +109,14 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     logger.warn('ABACATEPAY_API_KEY não configurada — checkout vai capturar o pedido mas sem link de pagamento automático.')
   }
 
+  // Desligado por padrão: a conta AbacatePay ainda não tem cartão homologado
+  // (visto em produção — "CARD is not available for this store" tanto no
+  // checkout transparente quanto no link hospedado). Vira true assim que a
+  // AbacatePay confirmar a homologação, sem precisar de nenhuma mudança de
+  // código — só a variável de ambiente (ver routes/shop.ts#GET
+  // /payment-methods, que o storefront consulta pra habilitar a aba Cartão).
+  const abacatePayCardEnabled = env.ABACATEPAY_CARD_ENABLED === 'true'
+
   return {
     port: Number(env.PORT || 3000),
     corsAllowedOrigins,
@@ -115,6 +128,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     smtp,
     adminAppUrl,
     abacatePayApiKey,
+    abacatePayCardEnabled,
     abacatePayWebhookSecret: env.ABACATEPAY_WEBHOOK_SECRET || null,
     storefrontUrl: env.STOREFRONT_URL || null,
   }
