@@ -41,6 +41,7 @@ function fakeOrdersStore(paidOrder: PaidOrderInfo | null): OrdersStore & { markP
     create: vi.fn(),
     attachPayment: vi.fn(),
     markPaidByCheckoutId: vi.fn().mockResolvedValue(paidOrder),
+    getStatus: vi.fn(),
   }
 }
 
