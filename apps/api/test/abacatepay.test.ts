@@ -69,3 +69,74 @@ describe('AbacatePayClient#createPaymentLink', () => {
     await expect(client.createPaymentLink({ name: 'x', priceCents: 100, externalId: 'pedido-1' })).rejects.toThrow(/método de pagamento indisponível/)
   })
 })
+
+describe('AbacatePayClient#createPixCharge', () => {
+  const originalFetch = global.fetch
+
+  beforeEach(() => {
+    global.fetch = vi.fn()
+  })
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  it('chama /transparents/create com os campos certos e devolve o QR Code', async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          id: 'pix_char_abc123xyz',
+          brCode: '00020160014BR.GOV.BCB.PIX070503***6304ABCD',
+          brCodeBase64: 'data:image/png;base64,iVBORw0KG...',
+          status: 'PENDING',
+          expiresAt: '2026-01-01T00:30:00.000Z',
+        },
+        success: true,
+        error: null,
+      })
+    )
+
+    const client = createAbacatePayClient('abc_prod_fake')!
+    const charge = await client.createPixCharge({
+      amountCents: 35900,
+      description: 'Pedido Thymos #7',
+      externalId: 'pedido-7',
+      expiresIn: 1800,
+      customer: { name: 'Ana Silva', email: 'ana@example.com', cellphone: '11999999999' },
+    })
+
+    expect(charge).toEqual({
+      checkoutId: 'pix_char_abc123xyz',
+      brCode: '00020160014BR.GOV.BCB.PIX070503***6304ABCD',
+      brCodeBase64: 'data:image/png;base64,iVBORw0KG...',
+      expiresAt: '2026-01-01T00:30:00.000Z',
+      status: 'PENDING',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://api.abacatepay.com/v2/transparents/create')
+    expect(init.headers.Authorization).toBe('Bearer abc_prod_fake')
+    const body = JSON.parse(init.body)
+    expect(body).toEqual({
+      method: 'PIX',
+      data: {
+        amount: 35900,
+        description: 'Pedido Thymos #7',
+        expiresIn: 1800,
+        externalId: 'pedido-7',
+        customer: { name: 'Ana Silva', email: 'ana@example.com', cellphone: '11999999999' },
+      },
+    })
+  })
+
+  it('lança erro descritivo quando a AbacatePay recusa a cobrança', async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>
+    fetchMock.mockResolvedValueOnce(jsonResponse({ data: null, success: false, error: 'valor mínimo não atingido' }, false, 400))
+
+    const client = createAbacatePayClient('abc_prod_fake')!
+    await expect(
+      client.createPixCharge({ amountCents: 1, description: 'x', externalId: 'pedido-1', expiresIn: 1800 })
+    ).rejects.toThrow(/valor mínimo não atingido/)
+  })
+})

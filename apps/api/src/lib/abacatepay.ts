@@ -23,6 +23,30 @@ export interface PaymentLink {
   status: string
 }
 
+export interface CreatePixChargeParams {
+  /** Valor total já com desconto aplicado, em centavos. */
+  amountCents: number
+  /** Aparece no app do banco do cliente ao pagar. */
+  description: string
+  /** Referência interna nossa (id do pedido) — vem de volta no webhook em `data.externalId`. */
+  externalId: string
+  /** Segundos até o QR Code expirar. */
+  expiresIn: number
+  customer?: { name?: string; email?: string; cellphone?: string }
+}
+
+export interface PixCharge {
+  /** Id da cobrança na AbacatePay — usado para casar o webhook de confirmação com o pedido. */
+  checkoutId: string
+  /** QR Code já como data URI (data:image/png;base64,...) — pronto pra um <img src>. */
+  brCodeBase64: string
+  /** Código "copia e cola" — alternativa ao QR Code (ex.: pra colar no app do banco). */
+  brCode: string
+  /** ISO datetime de expiração do QR Code. */
+  expiresAt: string
+  status: string
+}
+
 export interface AbacatePayClient {
   /**
    * Cria o link de pagamento para um pedido. A AbacatePay exige que todo item
@@ -34,8 +58,20 @@ export interface AbacatePayClient {
    * quando houver), e um checkout de item único apontando para ele. Cada
    * pedido = 1 produto avulso + 1 checkout, ambos rastreáveis pelo
    * `externalId` que é o id do nosso próprio pedido.
+   *
+   * Mantido para o método hospedado (redireciona pra app.abacatepay.com) —
+   * hoje o checkout do storefront usa createPixCharge() abaixo, que fica no
+   * próprio site. Fica disponível pra quando cartão for liberado na conta
+   * (checkout transparente só cobre Pix/Boleto, cartão exige o link).
    */
   createPaymentLink(params: CreatePaymentLinkParams): Promise<PaymentLink>
+  /**
+   * Cria uma cobrança Pix "transparente": ao contrário do link acima, não
+   * exige produto pré-cadastrado nem redireciona o cliente — a resposta já
+   * traz o QR Code (imagem) e o código copia-e-cola pra exibir na própria
+   * página do storefront, mantendo a marca da loja do início ao fim.
+   */
+  createPixCharge(params: CreatePixChargeParams): Promise<PixCharge>
 }
 
 interface AbacateApiEnvelope<T> {
@@ -87,6 +123,24 @@ class RealAbacatePayClient implements AbacatePayClient {
     })
 
     return { checkoutId: checkout.id, url: checkout.url, status: checkout.status }
+  }
+
+  async createPixCharge(params: CreatePixChargeParams): Promise<PixCharge> {
+    const charge = await abacateFetch<{ id: string; brCode: string; brCodeBase64: string; expiresAt: string; status: string }>(
+      this.apiKey,
+      '/transparents/create',
+      {
+        method: 'PIX',
+        data: {
+          amount: params.amountCents,
+          description: params.description.slice(0, 500),
+          expiresIn: params.expiresIn,
+          externalId: params.externalId,
+          customer: params.customer,
+        },
+      }
+    )
+    return { checkoutId: charge.id, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt, status: charge.status }
   }
 }
 

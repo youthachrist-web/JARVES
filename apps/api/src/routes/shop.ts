@@ -15,7 +15,10 @@ export interface ShopRouterDeps {
    * capturado normalmente, só sem link de pagamento automático (ver
    * lib/abacatepay.ts). */
   abacatePayClient: AbacatePayClient | null
-  /** Usada para montar returnUrl/completionUrl do checkout — opcional. */
+  /** Não usada pelo checkout Pix transparente atual (não há redirecionamento
+   * nem returnUrl/completionUrl); mantida na config só para o dia em que o
+   * link hospedado (createPaymentLink, ver lib/abacatepay.ts) for reativado
+   * — ex.: quando cartão for liberado na conta AbacatePay. */
   storefrontUrl: string | null
 }
 
@@ -53,7 +56,7 @@ function isValidRequestedItem(x: unknown): x is RequestedItem {
  * há dado sensível sendo exposto aqui (catálogo público + intake de pedido,
  * sem autenticação de admin envolvida de qualquer forma).
  */
-export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient, storefrontUrl }: ShopRouterDeps): Router {
+export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient }: ShopRouterDeps): Router {
   const router = Router()
 
   function allowAnyOrigin(res: import('express').Response) {
@@ -168,35 +171,37 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       detail: { id: orderId, customerEmail, subtotal, discount, total, couponCode: appliedCoupon },
     })
 
-    // Link de pagamento: melhor esforço — uma falha aqui NUNCA deve fazer o
-    // pedido inteiro falhar, já que ele já foi capturado com sucesso acima.
-    // Sem ABACATEPAY_API_KEY configurada, abacatePayClient é null e o pedido
-    // segue exatamente como antes desta integração (sem link automático).
-    let paymentUrl: string | null = null
+    // Checkout Pix transparente: melhor esforço — uma falha aqui NUNCA deve
+    // fazer o pedido inteiro falhar, já que ele já foi capturado com sucesso
+    // acima. Sem ABACATEPAY_API_KEY configurada, abacatePayClient é null e o
+    // pedido segue exatamente como antes desta integração (sem Pix
+    // automático). QR Code/copia-e-cola nunca são persistidos — só vivem
+    // nesta resposta; o que persiste é o checkoutId (pro webhook casar o
+    // pagamento confirmado, ver routes/webhooks.ts).
+    let pix: { checkoutId: string; brCode: string; brCodeBase64: string; expiresAt: string } | null = null
     if (abacatePayClient && total > 0) {
       try {
-        const totalQty = resolvedItems.reduce((s, i) => s + i.qty, 0)
-        const link = await abacatePayClient.createPaymentLink({
-          name: `Pedido Thymos #${orderId} (${totalQty} ${totalQty === 1 ? 'item' : 'itens'})`,
-          priceCents: Math.round(total * 100),
+        const charge = await abacatePayClient.createPixCharge({
+          amountCents: Math.round(total * 100),
+          description: `Pedido Thymos #${orderId}`,
           externalId: `pedido-${orderId}`,
-          returnUrl: storefrontUrl ?? undefined,
-          completionUrl: storefrontUrl ?? undefined,
+          expiresIn: 1800, // 30 minutos
+          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || undefined },
         })
-        await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: link.checkoutId, url: link.url, status: link.status })
-        paymentUrl = link.url
+        await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
+        pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }
       } catch (err) {
-        logger.error('Falha ao gerar link de pagamento AbacatePay', { orderId, message: (err as Error).message })
+        logger.error('Falha ao gerar cobrança Pix AbacatePay', { orderId, message: (err as Error).message })
         await eventLog.record({
           level: 'error',
           category: 'payment',
-          message: `Falha ao gerar link de pagamento para o pedido #${orderId}`,
+          message: `Falha ao gerar cobrança Pix para o pedido #${orderId}`,
           detail: { orderId, error: (err as Error).message },
         })
       }
     }
 
-    res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, paymentUrl })
+    res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, pix })
 
     // E-mail de notificação: melhor esforço, disparado depois da resposta ao
     // cliente e nunca aguardado por ela — um SMTP lento ou fora do ar (visto
@@ -208,7 +213,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
         `Cliente: ${customerName} (${customerEmail}${customerPhone ? `, ${customerPhone}` : ''})\n` +
           `Subtotal: R$ ${subtotal.toLocaleString('pt-BR')}${appliedCoupon ? `\nCupão: ${appliedCoupon} (-R$ ${discount.toLocaleString('pt-BR')})` : ''}\n` +
           `Total: R$ ${total.toLocaleString('pt-BR')}\n` +
-          (paymentUrl ? `Link de pagamento: ${paymentUrl}\n` : '') +
+          (pix ? `Cobrança Pix gerada (checkout ${pix.checkoutId})\n` : '') +
           `\nItens:\n${resolvedItems.map((i) => `- ${i.qty}x ${i.name} — R$ ${i.price.toLocaleString('pt-BR')}`).join('\n')}`
       )
       .catch((err) => {
@@ -220,6 +225,39 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
           detail: { orderId, error: (err as Error).message },
         })
       })
+  })
+
+  router.options('/orders/:id/status', (_req, res) => {
+    allowAnyOrigin(res)
+    res.status(204).end()
+  })
+
+  // Poll leve pro storefront saber quando o Pix foi confirmado, sem precisar
+  // consultar a AbacatePay de novo — o webhook (routes/webhooks.ts) já
+  // atualiza pagamento_status no Supabase assim que o pagamento é
+  // confirmado; aqui só lemos esse valor. Sem dado sensível na resposta.
+  router.get('/orders/:id/status', async (req, res) => {
+    allowAnyOrigin(res)
+    if (!ordersStore) {
+      res.status(503).json({ error: 'Checkout indisponível — Supabase não configurado' })
+      return
+    }
+    const orderId = Number(req.params.id)
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      res.status(400).json({ error: 'Id de pedido inválido' })
+      return
+    }
+    try {
+      const status = await ordersStore.getStatus(orderId)
+      if (status === null) {
+        res.status(404).json({ error: 'Pedido não encontrado' })
+        return
+      }
+      res.json({ status })
+    } catch (err) {
+      logger.error('Falha ao consultar status do pedido', { orderId, message: (err as Error).message })
+      res.status(503).json({ error: 'Não foi possível consultar o status agora. Tente novamente em instantes.' })
+    }
   })
 
   return router

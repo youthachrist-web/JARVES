@@ -6,7 +6,7 @@ import { InMemoryEventLogStore } from '../src/store/eventLogStore.js'
 import type { Mailer } from '../src/lib/mailer.js'
 import type { ProductsStore, Product } from '../src/store/productsStore.js'
 import type { OrdersStore } from '../src/store/ordersStore.js'
-import type { AbacatePayClient, PaymentLink } from '../src/lib/abacatepay.js'
+import type { AbacatePayClient, PixCharge } from '../src/lib/abacatepay.js'
 
 function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -84,21 +84,25 @@ function fakeProductsStore(products: Product[]): ProductsStore {
   return { listActive: vi.fn().mockResolvedValue(products) }
 }
 
-function fakeOrdersStore(nextId = 1): OrdersStore & { attachPayment: ReturnType<typeof vi.fn> } {
+function fakeOrdersStore(nextId = 1, status: 'pendente' | 'pago' | null = 'pendente'): OrdersStore & { attachPayment: ReturnType<typeof vi.fn> } {
   return {
     create: vi.fn().mockResolvedValue({ id: nextId }),
     attachPayment: vi.fn().mockResolvedValue(undefined),
     markPaidByCheckoutId: vi.fn().mockResolvedValue(null),
+    getStatus: vi.fn().mockResolvedValue(status),
   }
 }
 
-function fakeAbacatePayClient(link: Partial<PaymentLink> = {}): AbacatePayClient & { createPaymentLink: ReturnType<typeof vi.fn> } {
+function fakeAbacatePayClient(charge: Partial<PixCharge> = {}): AbacatePayClient & { createPixCharge: ReturnType<typeof vi.fn> } {
   return {
-    createPaymentLink: vi.fn().mockResolvedValue({
-      checkoutId: 'bill_fake123',
-      url: 'https://app.abacatepay.com/pay/bill_fake123',
+    createPaymentLink: vi.fn(),
+    createPixCharge: vi.fn().mockResolvedValue({
+      checkoutId: 'pix_char_fake123',
+      brCode: '00020160014BR.GOV.BCB.PIX070503***6304ABCD',
+      brCodeBase64: 'data:image/png;base64,iVBORw0KG...',
+      expiresAt: '2026-01-01T00:00:00.000Z',
       status: 'PENDING',
-      ...link,
+      ...charge,
     }),
   }
 }
@@ -242,7 +246,7 @@ describe('shopRouter — /orders (integração)', () => {
     const res = await request(app).post('/orders').send(validBody)
 
     expect(res.status).toBe(201)
-    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, paymentUrl: null })
+    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, pix: null })
     expect(mailer.send).toHaveBeenCalledTimes(1)
     expect(mailer.send.mock.calls[0][0]).toMatch(/42/)
 
@@ -272,14 +276,15 @@ describe('shopRouter — /orders (integração)', () => {
       create: vi.fn().mockRejectedValue(new Error('boom')),
       attachPayment: vi.fn(),
       markPaidByCheckoutId: vi.fn(),
+      getStatus: vi.fn(),
     }
     const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), failing)
     const res = await request(app).post('/orders').send(validBody)
     expect(res.status).toBe(503)
   })
 
-  describe('link de pagamento (AbacatePay)', () => {
-    it('gera o link de pagamento e grava no pedido quando o cliente está configurado', async () => {
+  describe('checkout Pix transparente (AbacatePay)', () => {
+    it('gera a cobrança Pix e grava no pedido quando o cliente está configurado', async () => {
       const orders = fakeOrdersStore(10)
       const abacatePayClient = fakeAbacatePayClient()
       const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
@@ -287,44 +292,85 @@ describe('shopRouter — /orders (integração)', () => {
       const res = await request(app).post('/orders').send(validBody)
 
       expect(res.status).toBe(201)
-      expect(res.body.paymentUrl).toBe('https://app.abacatepay.com/pay/bill_fake123')
-      expect(abacatePayClient.createPaymentLink).toHaveBeenCalledWith(
-        expect.objectContaining({ priceCents: 42900, externalId: 'pedido-10' })
+      expect(res.body.pix).toEqual({
+        checkoutId: 'pix_char_fake123',
+        brCode: '00020160014BR.GOV.BCB.PIX070503***6304ABCD',
+        brCodeBase64: 'data:image/png;base64,iVBORw0KG...',
+        expiresAt: '2026-01-01T00:00:00.000Z',
+      })
+      expect(abacatePayClient.createPixCharge).toHaveBeenCalledWith(
+        expect.objectContaining({ amountCents: 42900, externalId: 'pedido-10', expiresIn: 1800 })
       )
       expect(orders.attachPayment).toHaveBeenCalledWith(
         10,
-        expect.objectContaining({ provider: 'abacatepay', checkoutId: 'bill_fake123', url: 'https://app.abacatepay.com/pay/bill_fake123' })
+        expect.objectContaining({ provider: 'abacatepay', checkoutId: 'pix_char_fake123', url: null })
       )
     })
 
-    it('usa o total JÁ com desconto (cupão) para calcular o valor em centavos do link', async () => {
+    it('usa o total JÁ com desconto (cupão) para calcular o valor em centavos da cobrança', async () => {
       const orders = fakeOrdersStore(11)
       const abacatePayClient = fakeAbacatePayClient()
       const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
 
       await request(app).post('/orders').send({ ...validBody, couponCode: 'THYMOS10' })
 
-      expect(abacatePayClient.createPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ priceCents: 38600 })) // 386,00 em centavos
+      expect(abacatePayClient.createPixCharge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 38600 })) // 386,00 em centavos
     })
 
-    it('NUNCA falha o pedido inteiro se a geração do link de pagamento der erro', async () => {
+    it('NUNCA falha o pedido inteiro se a geração da cobrança Pix der erro', async () => {
       const orders = fakeOrdersStore(12)
-      const abacatePayClient: AbacatePayClient = { createPaymentLink: vi.fn().mockRejectedValue(new Error('AbacatePay fora do ar')) }
+      const abacatePayClient: AbacatePayClient = {
+        createPaymentLink: vi.fn(),
+        createPixCharge: vi.fn().mockRejectedValue(new Error('AbacatePay fora do ar')),
+      }
       const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient })
 
       const res = await request(app).post('/orders').send(validBody)
 
       expect(res.status).toBe(201)
-      expect(res.body.paymentUrl).toBeNull()
+      expect(res.body.pix).toBeNull()
       expect(orders.attachPayment).not.toHaveBeenCalled()
     })
 
-    it('não tenta gerar link quando abacatePayClient é null (não configurado)', async () => {
+    it('não tenta gerar cobrança quando abacatePayClient é null (não configurado)', async () => {
       const orders = fakeOrdersStore(13)
       const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), orders, { abacatePayClient: null })
       const res = await request(app).post('/orders').send(validBody)
       expect(res.status).toBe(201)
-      expect(res.body.paymentUrl).toBeNull()
+      expect(res.body.pix).toBeNull()
     })
+  })
+})
+
+describe('GET /orders/:id/status', () => {
+  it('retorna 503 quando o Supabase não está configurado (ordersStore ausente)', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), null)
+    const res = await request(app).get('/orders/1/status')
+    expect(res.status).toBe(503)
+  })
+
+  it('rejeita id inválido', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app).get('/orders/abc/status')
+    expect(res.status).toBe(400)
+  })
+
+  it('retorna 404 quando o pedido não existe', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore(1, null))
+    const res = await request(app).get('/orders/999/status')
+    expect(res.status).toBe(404)
+  })
+
+  it('retorna o status atual do pedido (pendente ou pago)', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore(1, 'pago'))
+    const res = await request(app).get('/orders/5/status')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ status: 'pago' })
+  })
+
+  it('libera CORS para qualquer origem nesta rota', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app).get('/orders/5/status').set('Origin', 'https://youthachrist-web.github.io')
+    expect(res.headers['access-control-allow-origin']).toBe('*')
   })
 })

@@ -1217,15 +1217,14 @@ async function submitOrder(e) {
     appliedCouponCode = null;
     updateCartUI();
 
-    if (data.paymentUrl) {
-      // Link de pagamento real gerado (AbacatePay) — leva o cliente direto
-      // para pagar. O pedido já está salvo, então mesmo se ele fechar a
-      // aba aqui, o link continua acessível e válido.
-      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} confirmado! Redirecionando para o pagamento...`; msg.className = 'coupon-msg ok'; }
-      window.location.href = data.paymentUrl;
+    if (data.pix) {
+      // Checkout Pix transparente real (AbacatePay) — QR Code + copia-e-cola
+      // exibidos aqui mesmo, sem sair do site (ver openPixModal()).
+      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} confirmado!`; msg.className = 'coupon-msg ok'; }
+      openPixModal({ orderId: data.orderId, total: data.total, pix: data.pix, apiBaseUrl });
     } else {
-      // Sem link automático (integração de pagamento não configurada neste
-      // ambiente) — mesma mensagem de sempre, a loja entra em contato.
+      // Sem cobrança automática (integração de pagamento não configurada
+      // neste ambiente) — mesma mensagem de sempre, a loja entra em contato.
       if (msg) { msg.textContent = `✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.`; msg.className = 'coupon-msg ok'; }
     }
   } catch (err) {
@@ -1237,6 +1236,120 @@ async function submitOrder(e) {
   }
 }
 document.getElementById('checkout-form')?.addEventListener('submit', submitOrder);
+
+// ══════════════════════
+// CHECKOUT PIX TRANSPARENTE — QR Code + copia-e-cola exibidos aqui mesmo
+// (nunca redireciona pra fora do site), com a marca da própria Thymos.
+// Confirmação em tempo real via poll em GET /orders/:id/status (o backend
+// atualiza esse status assim que o webhook da AbacatePay confirma o
+// pagamento — ver apps/api/src/routes/webhooks.ts).
+// ══════════════════════
+let pixPollTimer = null;
+let pixCountdownTimer = null;
+
+function formatBRL(n) {
+  return `R$${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+}
+
+function openPixModal({ orderId, total, pix, apiBaseUrl }) {
+  document.getElementById('pix-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'pix-modal';
+  modal.className = 'prod-modal';
+  modal.innerHTML = `
+    <div class="modal-scrim" id="pix-modal-overlay"></div>
+    <div class="modal-box pix-modal-box">
+      <button class="modal-x" id="pix-modal-close" aria-label="Fechar">✕</button>
+      <div class="pix-box" id="pix-box">
+        <div class="pix-logo logo-wordmark">thymos</div>
+        <p class="pix-order">Pedido #${orderId} confirmado</p>
+        <p class="pix-total">${formatBRL(total)}</p>
+        <div class="pix-qr-wrap">
+          <img src="${pix.brCodeBase64}" alt="QR Code Pix" class="pix-qr" />
+        </div>
+        <p class="pix-hint">Abra o app do seu banco e escaneie o QR Code, ou copie o código abaixo</p>
+        <div class="pix-code-row">
+          <input type="text" readonly class="pix-code-input" id="pix-code-input" value="${pix.brCode}" />
+          <button class="pix-copy-btn" id="pix-copy-btn">Copiar</button>
+        </div>
+        <div class="pix-status" id="pix-status">
+          <span class="pix-spinner"></span> Aguardando pagamento<span class="pix-timer" id="pix-timer"></span>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => modal.classList.add('open'));
+
+  const close = () => closePixModal();
+  modal.querySelector('#pix-modal-overlay').addEventListener('click', close);
+  modal.querySelector('#pix-modal-close').addEventListener('click', close);
+
+  modal.querySelector('#pix-copy-btn').addEventListener('click', () => {
+    const input = modal.querySelector('#pix-code-input');
+    navigator.clipboard?.writeText(pix.brCode).then(() => {
+      const btn = modal.querySelector('#pix-copy-btn');
+      btn.textContent = 'Copiado!';
+      setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+    }).catch(() => { input.select(); });
+  });
+
+  startPixCountdown(pix.expiresAt);
+  startPixPolling(orderId, apiBaseUrl);
+}
+
+function startPixCountdown(expiresAt) {
+  clearInterval(pixCountdownTimer);
+  const expiresMs = new Date(expiresAt).getTime();
+  const tick = () => {
+    const el = document.getElementById('pix-timer');
+    if (!el) { clearInterval(pixCountdownTimer); return; }
+    const remaining = Math.max(0, Math.floor((expiresMs - Date.now()) / 1000));
+    const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const ss = String(remaining % 60).padStart(2, '0');
+    el.textContent = ` (expira em ${mm}:${ss})`;
+    if (remaining <= 0) clearInterval(pixCountdownTimer);
+  };
+  tick();
+  pixCountdownTimer = setInterval(tick, 1000);
+}
+
+function startPixPolling(orderId, apiBaseUrl) {
+  clearInterval(pixPollTimer);
+  pixPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/orders/${orderId}/status`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'pago') {
+        clearInterval(pixPollTimer);
+        clearInterval(pixCountdownTimer);
+        showPixPaid();
+      }
+    } catch { /* falha de rede pontual — tenta de novo no próximo tick */ }
+  }, 4000);
+}
+
+function showPixPaid() {
+  const box = document.getElementById('pix-box');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="pix-logo logo-wordmark">thymos</div>
+    <div class="pix-paid-icon">✓</div>
+    <p class="pix-paid-title">Pagamento confirmado!</p>
+    <p class="pix-hint">Obrigada por comprar na Thymos 💚 Você vai receber a confirmação por e-mail em breve.</p>`;
+}
+
+function closePixModal() {
+  clearInterval(pixPollTimer);
+  clearInterval(pixCountdownTimer);
+  const modal = document.getElementById('pix-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
+}
 
 // ══════════════════════
 // SCROLL REVEAL

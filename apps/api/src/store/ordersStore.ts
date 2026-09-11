@@ -23,7 +23,8 @@ export interface NewOrder {
 export interface PaymentInfo {
   provider: string
   checkoutId: string
-  url: string
+  /** Null para cobrança Pix transparente (não existe URL — QR Code/copia-e-cola são devolvidos direto na resposta de POST /orders, nunca persistidos). */
+  url: string | null
   status: string
 }
 
@@ -44,6 +45,11 @@ export interface OrdersStore {
    * `checkoutId` da AbacatePay e marca como pago. Retorna null se não achar
    * (ex.: reentrega de um webhook de pedido já removido). */
   markPaidByCheckoutId(checkoutId: string): Promise<PaidOrderInfo | null>
+  /** Usado pelo storefront pra saber quando o Pix foi confirmado (ver
+   * GET /orders/:id/status) — poll simples no próprio pedido, sem precisar
+   * consultar a AbacatePay de novo (o webhook já atualiza isso). Retorna
+   * null se o pedido não existir. */
+  getStatus(orderId: number): Promise<'pendente' | 'pago' | null>
 }
 
 /**
@@ -118,5 +124,14 @@ export class SupabaseOrdersStore implements OrdersStore {
     if (rows.length === 0) return null
     const row = rows[0]
     return { id: row.id, customerEmail: row.cliente_email, customerName: row.cliente_nome, total: row.total }
+  }
+
+  async getStatus(orderId: number): Promise<'pendente' | 'pago' | null> {
+    const res = await this.fetchImpl(`${this.supabaseUrl}/rest/v1/pedidos?id=eq.${orderId}&select=pagamento_status`, {
+      headers: this.headers(),
+    })
+    if (!res.ok) throw new Error(`Falha ao consultar status do pedido no Supabase (status ${res.status})`)
+    const rows = (await res.json()) as Array<{ pagamento_status: 'pendente' | 'pago' }>
+    return rows[0]?.pagamento_status ?? null
   }
 }
