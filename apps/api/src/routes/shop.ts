@@ -44,6 +44,26 @@ function isValidRequestedItem(x: unknown): x is RequestedItem {
 }
 
 /**
+ * Validação de CPF (dígito verificador) — mesmo algoritmo replicado no
+ * storefront (ver isValidCPF em script.js) para feedback imediato, mas
+ * quem decide de verdade é sempre aqui: um CPF nunca é confiável só porque
+ * "passou" no cliente. Exigido porque a AbacatePay recusa a cobrança Pix
+ * inteira quando manda `customer` sem `taxId` válido (ver lib/abacatepay.ts).
+ */
+function isValidCPF(raw: string): boolean {
+  const cpf = raw.replace(/\D/g, '')
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false
+  const digits = cpf.split('').map(Number)
+  const calc = (len: number) => {
+    let sum = 0
+    for (let i = 0; i < len; i++) sum += digits[i] * (len + 1 - i)
+    const rest = (sum * 10) % 11
+    return rest === 10 ? 0 : rest
+  }
+  return calc(9) === digits[9] && calc(10) === digits[10]
+}
+
+/**
  * Catálogo público de produtos e captura de pedidos, servindo o storefront
  * (apps/storefront) diretamente do Supabase — sem depender da Nuvemshop
  * estar conectada. Rotas públicas de propósito (sem chave de admin): o
@@ -97,12 +117,17 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       return
     }
 
-    const { customerName, customerEmail, customerPhone, items, couponCode } = req.body ?? {}
+    const { customerName, customerEmail, customerPhone, customerTaxId, items, couponCode } = req.body ?? {}
 
-    if (!customerName || !customerEmail || !Array.isArray(items) || items.length === 0) {
-      res.status(400).json({ error: 'Campos obrigatórios: customerName, customerEmail, items (lista não vazia).' })
+    if (!customerName || !customerEmail || !customerTaxId || !Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ error: 'Campos obrigatórios: customerName, customerEmail, customerTaxId (CPF), items (lista não vazia).' })
       return
     }
+    if (typeof customerTaxId !== 'string' || !isValidCPF(customerTaxId)) {
+      res.status(400).json({ error: 'CPF inválido.' })
+      return
+    }
+    const normalizedTaxId = customerTaxId.replace(/\D/g, '')
     if (!items.every(isValidRequestedItem)) {
       res.status(400).json({ error: 'Cada item precisa de productId (número) e qty (inteiro positivo).' })
       return
@@ -150,6 +175,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
         customerName,
         customerEmail,
         customerPhone: customerPhone || undefined,
+        customerTaxId: normalizedTaxId,
         items: resolvedItems,
         subtotal,
         discount,
@@ -179,13 +205,11 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
     // nesta resposta; o que persiste é o checkoutId (pro webhook casar o
     // pagamento confirmado, ver routes/webhooks.ts).
     //
-    // NUNCA manda `customer`: testado em produção e a AbacatePay recusa a
-    // cobrança inteira ("Value should be one of 'object', 'object'") sempre
-    // que esse objeto vem sem `taxId` (CPF) — e o checkout do storefront não
-    // coleta CPF hoje. `customer` é documentado como opcional e funciona
-    // perfeitamente sem ele; se um dia quisermos o nome do cliente associado
-    // ao Pix (nota fiscal, etc.), aí sim precisa coletar CPF no checkout e
-    // validar antes de mandar.
+    // `customer` (com `taxId`) agora é sempre enviado: a AbacatePay recusa a
+    // cobrança inteira ("Value should be one of 'object', 'object'") quando
+    // esse objeto vem sem CPF válido (visto em produção) — por isso o
+    // checkout passou a exigir CPF (validado acima), o que também associa o
+    // nome do cliente ao Pix gerado.
     let pix: { checkoutId: string; brCode: string; brCodeBase64: string; expiresAt: string } | null = null
     if (abacatePayClient && total > 0) {
       try {
@@ -194,6 +218,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
           description: `Pedido Thymos #${orderId}`,
           externalId: `pedido-${orderId}`,
           expiresIn: 1800, // 30 minutos
+          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || undefined, taxId: normalizedTaxId },
         })
         await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
         pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }

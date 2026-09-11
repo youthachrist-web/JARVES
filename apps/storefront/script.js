@@ -347,7 +347,7 @@ let cartDiscount      = 0;
 // Código do cupão aplicado no momento — cartDiscount é só o fator numérico
 // (0.10) usado para mostrar o total na tela; o checkout manda este código
 // para o servidor, que recalcula o desconto de verdade a partir dele (ver
-// submitOrder() e apps/api/src/routes/shop.ts). Nunca confiamos no total
+// createPixOrder() e apps/api/src/routes/shop.ts). Nunca confiamos no total
 // calculado aqui para o valor cobrado de fato.
 let appliedCouponCode = null;
 
@@ -1142,15 +1142,55 @@ cartOverlay.addEventListener('click', closeCart);
 document.getElementById('cart-shop-link')?.addEventListener('click', closeCart);
 
 // ══════════════════════
-// CHECKOUT
+// CHECKOUT — página própria em 3 passos (Dados → Pagamento → Confirmação),
+// independente da Nuvemshop, com o tema visual da Thymos do início ao fim.
+// Pagamento é Pix transparente (QR Code/copia-e-cola gerado pela AbacatePay,
+// ver apps/api/src/routes/shop.ts) exibido dentro da própria página — nunca
+// redireciona pra fora do site. Cartão de crédito aparece na estrutura de
+// pagamento (como num checkout "de verdade") mas fica desabilitado — a conta
+// AbacatePay ainda não tem cartão homologado, e nunca oferecemos um método
+// que na prática não processa. Se window.THYMOS_CONFIG.nuvemshopStoreDomain
+// estiver preenchido (loja Nuvemshop conectada), usa o checkout hospedado
+// dela em vez desta página — mas isso é opcional, não o caminho padrão.
 // ══════════════════════
-// Checkout próprio, independente da Nuvemshop: captura os dados de contato
-// do cliente e registra o pedido via apps/api (POST /orders → Supabase,
-// tabela `pedidos`), sem gateway de pagamento integrado ainda — a loja
-// recebe uma notificação por e-mail e entra em contato para confirmar
-// pagamento/frete. Se window.THYMOS_CONFIG.nuvemshopStoreDomain estiver
-// preenchido (loja Nuvemshop conectada), usa o checkout hospedado dela em
-// vez disso — mas isso é opcional, não o caminho padrão.
+let checkoutCustomer = null;
+let checkoutOrderId = null;
+let pixPollTimer = null;
+let pixCountdownTimer = null;
+
+function formatBRL(n) {
+  return `R$${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+}
+
+function maskCPF(v) {
+  return v.replace(/\D/g, '').slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+function maskPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length > 10) return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_m, a, b, c) => c ? `(${a}) ${b}-${c}` : (b ? `(${a}) ${b}` : `(${a}`));
+  return d.replace(/(\d{2})(\d{4})(\d{0,4})/, (_m, a, b, c) => c ? `(${a}) ${b}-${c}` : (b ? `(${a}) ${b}` : `(${a}`));
+}
+
+// Mesma validação (dígito verificador) do servidor — ver isValidCPF em
+// apps/api/src/routes/shop.ts. Checar aqui só poupa uma viagem à API por
+// erro de digitação; quem decide de verdade é sempre o servidor.
+function isValidCPF(raw) {
+  const cpf = String(raw).replace(/\D/g, '');
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digits = cpf.split('').map(Number);
+  const calc = (len) => {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += digits[i] * (len + 1 - i);
+    const rest = (sum * 10) % 11;
+    return rest === 10 ? 0 : rest;
+  };
+  return calc(9) === digits[9] && calc(10) === digits[10];
+}
+
 function handleCheckout() {
   if (cart.length === 0) return;
 
@@ -1160,35 +1200,171 @@ function handleCheckout() {
     return;
   }
 
-  document.getElementById('checkout-btn').style.display = 'none';
-  document.getElementById('checkout-form').style.display = 'flex';
+  openCheckoutPage();
 }
 document.getElementById('checkout-btn')?.addEventListener('click', handleCheckout);
 
-document.getElementById('checkout-cancel')?.addEventListener('click', () => {
-  document.getElementById('checkout-form').style.display = 'none';
-  document.getElementById('checkout-btn').style.display = '';
-  const msg = document.getElementById('checkout-msg');
-  if (msg) { msg.textContent = ''; msg.className = 'coupon-msg'; }
-});
+function renderCartSummaryHTML() {
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const discount = Math.round(subtotal * cartDiscount);
+  const total = subtotal - discount;
+  const shippingFree = total >= FREE_SHIPPING;
+  return `
+    <h3 class="cp-summary-title">Resumo do pedido</h3>
+    <div class="cp-summary-items">
+      ${cart.map(item => `
+        <div class="cp-summary-item">
+          <div class="cp-si-img">${item.images?.length ? `<img src="${item.images[0]}" alt="${item.name}"/>` : ''}<span class="cp-si-qty">${item.qty}</span></div>
+          <div class="cp-si-info">
+            <div class="cp-si-name">${item.name}</div>
+            <div class="cp-si-cat">${item.category}</div>
+          </div>
+          <div class="cp-si-price">${formatBRL(item.price * item.qty)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="cp-summary-totals">
+      <div class="cp-st-row"><span>Subtotal</span><span>${formatBRL(subtotal)}</span></div>
+      ${cartDiscount > 0 ? `<div class="cp-st-row disc"><span>Desconto${appliedCouponCode ? ` (${appliedCouponCode})` : ''}</span><span>-${formatBRL(discount)}</span></div>` : ''}
+      <div class="cp-st-row"><span>Frete</span><span class="${shippingFree ? 'cp-free' : ''}">${shippingFree ? 'Grátis' : 'A calcular'}</span></div>
+      <div class="cp-st-row total"><span>Total</span><span>${formatBRL(total)}</span></div>
+    </div>
+    <div class="cp-secure-badge">${ICONS.check} Ambiente seguro — seus dados são protegidos do início ao fim</div>`;
+}
 
-async function submitOrder(e) {
-  e.preventDefault();
-  const msg = document.getElementById('checkout-msg');
-  const submitBtn = document.getElementById('checkout-confirm-btn');
+function openCheckoutPage() {
+  document.getElementById('checkout-page')?.remove();
+  closeCart();
+
+  const page = document.createElement('div');
+  page.id = 'checkout-page';
+  page.className = 'checkout-page';
+  page.innerHTML = `
+    <div class="cp-topbar">
+      <div class="cp-logo logo-wordmark">thymos</div>
+      <div class="cp-secure">🔒 Compra 100% segura</div>
+      <button class="cp-close" id="cp-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="cp-steps">
+      <div class="cp-step" data-step="1"><span class="cp-step-circle">1</span><span class="cp-step-label">Dados</span></div>
+      <div class="cp-step-line"></div>
+      <div class="cp-step" data-step="2"><span class="cp-step-circle">2</span><span class="cp-step-label">Pagamento</span></div>
+      <div class="cp-step-line"></div>
+      <div class="cp-step" data-step="3"><span class="cp-step-circle">3</span><span class="cp-step-label">Confirmação</span></div>
+    </div>
+    <div class="cp-body">
+      <div class="cp-main"></div>
+      <aside class="cp-summary" id="cp-summary">${renderCartSummaryHTML()}</aside>
+    </div>`;
+
+  document.body.appendChild(page);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => page.classList.add('open'));
+
+  page.querySelector('#cp-close').addEventListener('click', closeCheckoutPage);
+
+  checkoutCustomer = null;
+  checkoutOrderId = null;
+  setCheckoutStep(1);
+}
+
+function closeCheckoutPage() {
+  clearInterval(pixPollTimer);
+  clearInterval(pixCountdownTimer);
+  const page = document.getElementById('checkout-page');
+  if (!page) return;
+  page.classList.remove('open');
+  setTimeout(() => { page.remove(); document.body.style.overflow = ''; }, 300);
+}
+
+function setCheckoutStep(n) {
+  const page = document.getElementById('checkout-page');
+  if (!page) return;
+  page.querySelectorAll('.cp-step').forEach(el => {
+    const stepNum = Number(el.dataset.step);
+    el.classList.toggle('active', stepNum === n);
+    el.classList.toggle('done', stepNum < n);
+  });
+  const main = page.querySelector('.cp-main');
+  if (n === 1) { main.innerHTML = renderStep1HTML(); wireStep1(); }
+  else if (n === 2) { main.innerHTML = renderStep2HTML(); wireStep2(); }
+  else if (n === 3) { main.innerHTML = renderStep3HTML(); wireStep3(); }
+}
+
+// ── Passo 1: Dados ──
+function renderStep1HTML() {
+  const c = checkoutCustomer;
+  return `
+    <h2 class="cp-step-title">Seus dados</h2>
+    <p class="cp-step-sub">Preencha para gerar o pagamento Pix — sem sair desta página.</p>
+    <form id="cp-form-dados" class="cp-form" novalidate>
+      <label class="cp-field"><span>Nome completo</span><input type="text" id="cp-name" value="${c?.name || ''}" autocomplete="name" required /></label>
+      <label class="cp-field"><span>E-mail</span><input type="email" id="cp-email" value="${c?.email || ''}" autocomplete="email" required /></label>
+      <div class="cp-field-row">
+        <label class="cp-field"><span>CPF</span><input type="text" id="cp-cpf" value="${c?.cpf || ''}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required /></label>
+        <label class="cp-field"><span>WhatsApp <em>(opcional)</em></span><input type="tel" id="cp-phone" value="${c?.phone || ''}" inputmode="numeric" maxlength="15" placeholder="(00) 00000-0000" autocomplete="tel" /></label>
+      </div>
+      <p class="cp-field-err" id="cp-dados-err"></p>
+      <button type="submit" class="cp-continue-btn">Continuar para pagamento →</button>
+    </form>`;
+}
+
+function wireStep1() {
+  const cpfInput = document.getElementById('cp-cpf');
+  cpfInput?.addEventListener('input', () => { cpfInput.value = maskCPF(cpfInput.value); });
+  const phoneInput = document.getElementById('cp-phone');
+  phoneInput?.addEventListener('input', () => { phoneInput.value = maskPhone(phoneInput.value); });
+
+  document.getElementById('cp-form-dados')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('cp-name').value.trim();
+    const email = document.getElementById('cp-email').value.trim();
+    const phone = document.getElementById('cp-phone').value.trim();
+    const cpf = document.getElementById('cp-cpf').value.trim();
+    const err = document.getElementById('cp-dados-err');
+
+    if (!isValidCPF(cpf)) {
+      if (err) err.textContent = 'CPF inválido — confira os números digitados.';
+      return;
+    }
+    if (err) err.textContent = '';
+
+    checkoutCustomer = { name, email, phone, cpf };
+    setCheckoutStep(2);
+  });
+}
+
+// ── Passo 2: Pagamento ──
+function renderStep2HTML() {
+  return `
+    <h2 class="cp-step-title">Forma de pagamento</h2>
+    <div class="cp-pay-tabs">
+      <button class="cp-pay-tab active" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L22 12 L12 22 L2 12 Z"/></svg>
+        Pix <span class="cp-tab-badge instant">Instantâneo</span>
+      </button>
+      <button class="cp-pay-tab disabled" type="button" disabled title="Em breve — por enquanto pague com Pix, é instantâneo.">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Cartão de Crédito <span class="cp-tab-badge soon">Em breve</span>
+      </button>
+    </div>
+    <div class="cp-pay-panel" id="cp-pay-panel">
+      <div class="cp-pix-loading"><span class="pix-spinner"></span> Gerando cobrança Pix...</div>
+    </div>
+    <button class="cp-back-btn" id="cp-back-to-dados" type="button">← Voltar para os dados</button>`;
+}
+
+function wireStep2() {
+  document.getElementById('cp-back-to-dados')?.addEventListener('click', () => setCheckoutStep(1));
+  createPixOrder();
+}
+
+async function createPixOrder() {
+  const panel = document.getElementById('cp-pay-panel');
   const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
-
-  const customerName = document.getElementById('checkout-name').value.trim();
-  const customerEmail = document.getElementById('checkout-email').value.trim();
-  const customerPhone = document.getElementById('checkout-phone').value.trim();
-
   if (!apiBaseUrl) {
-    if (msg) { msg.textContent = 'Checkout indisponível no momento. Tente novamente mais tarde.'; msg.className = 'coupon-msg err'; }
+    if (panel) panel.innerHTML = `<p class="cp-pix-error">Checkout indisponível no momento. Tente novamente mais tarde.</p>`;
     return;
   }
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Enviando...';
   try {
     // Só id + quantidade — preço e nome vêm sempre do catálogo real no
     // servidor (nunca confiamos no que o cliente manda aqui, ver
@@ -1199,9 +1375,10 @@ async function submitOrder(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        customerName,
-        customerEmail,
-        customerPhone: customerPhone || undefined,
+        customerName: checkoutCustomer.name,
+        customerEmail: checkoutCustomer.email,
+        customerPhone: checkoutCustomer.phone || undefined,
+        customerTaxId: checkoutCustomer.cpf,
         items: cart.map(i => ({ productId: i.id, qty: i.qty })),
         couponCode: appliedCouponCode || undefined,
       }),
@@ -1209,95 +1386,54 @@ async function submitOrder(e) {
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
 
-    document.getElementById('checkout-form').style.display = 'none';
-    document.getElementById('checkout-form').reset();
-    document.getElementById('checkout-btn').style.display = '';
+    checkoutOrderId = data.orderId;
     cart = [];
     cartDiscount = 0;
     appliedCouponCode = null;
     updateCartUI();
 
     if (data.pix) {
-      // Checkout Pix transparente real (AbacatePay) — QR Code + copia-e-cola
-      // exibidos aqui mesmo, sem sair do site (ver openPixModal()).
-      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} confirmado!`; msg.className = 'coupon-msg ok'; }
-      openPixModal({ orderId: data.orderId, total: data.total, pix: data.pix, apiBaseUrl });
+      renderPixPanel(data.pix);
+      startPixCountdown(data.pix.expiresAt);
+      startPixPolling(data.orderId, apiBaseUrl);
     } else {
       // Sem cobrança automática (integração de pagamento não configurada
-      // neste ambiente) — mesma mensagem de sempre, a loja entra em contato.
-      if (msg) { msg.textContent = `✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.`; msg.className = 'coupon-msg ok'; }
+      // neste ambiente) — o pedido já foi registrado, a loja entra em contato.
+      if (panel) panel.innerHTML = `<p class="cp-pix-error" style="color:var(--nude-dark)">✓ Pedido #${data.orderId} recebido! Entraremos em contato em breve para confirmar pagamento e entrega.</p>`;
     }
   } catch (err) {
-    if (msg) { msg.textContent = 'Não foi possível registrar o pedido agora. Tente novamente em instantes.'; msg.className = 'coupon-msg err'; }
-    console.warn('Falha ao enviar pedido:', err.message);
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Confirmar Pedido';
+    if (panel) {
+      panel.innerHTML = `
+        <p class="cp-pix-error">Não foi possível gerar o pagamento agora. Tente novamente.</p>
+        <button class="cp-retry-btn" id="cp-pix-retry" type="button">Tentar novamente</button>`;
+      document.getElementById('cp-pix-retry')?.addEventListener('click', createPixOrder);
+    }
+    console.warn('Falha ao criar pedido/Pix:', err.message);
   }
 }
-document.getElementById('checkout-form')?.addEventListener('submit', submitOrder);
 
-// ══════════════════════
-// CHECKOUT PIX TRANSPARENTE — QR Code + copia-e-cola exibidos aqui mesmo
-// (nunca redireciona pra fora do site), com a marca da própria Thymos.
-// Confirmação em tempo real via poll em GET /orders/:id/status (o backend
-// atualiza esse status assim que o webhook da AbacatePay confirma o
-// pagamento — ver apps/api/src/routes/webhooks.ts).
-// ══════════════════════
-let pixPollTimer = null;
-let pixCountdownTimer = null;
-
-function formatBRL(n) {
-  return `R$${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-}
-
-function openPixModal({ orderId, total, pix, apiBaseUrl }) {
-  document.getElementById('pix-modal')?.remove();
-
-  const modal = document.createElement('div');
-  modal.id = 'pix-modal';
-  modal.className = 'prod-modal';
-  modal.innerHTML = `
-    <div class="modal-scrim" id="pix-modal-overlay"></div>
-    <div class="modal-box pix-modal-box">
-      <button class="modal-x" id="pix-modal-close" aria-label="Fechar">✕</button>
-      <div class="pix-box" id="pix-box">
-        <div class="pix-logo logo-wordmark">thymos</div>
-        <p class="pix-order">Pedido #${orderId} confirmado</p>
-        <p class="pix-total">${formatBRL(total)}</p>
-        <div class="pix-qr-wrap">
-          <img src="${pix.brCodeBase64}" alt="QR Code Pix" class="pix-qr" />
-        </div>
-        <p class="pix-hint">Abra o app do seu banco e escaneie o QR Code, ou copie o código abaixo</p>
-        <div class="pix-code-row">
-          <input type="text" readonly class="pix-code-input" id="pix-code-input" value="${pix.brCode}" />
-          <button class="pix-copy-btn" id="pix-copy-btn">Copiar</button>
-        </div>
-        <div class="pix-status" id="pix-status">
-          <span class="pix-spinner"></span> Aguardando pagamento<span class="pix-timer" id="pix-timer"></span>
-        </div>
+function renderPixPanel(pix) {
+  const panel = document.getElementById('cp-pay-panel');
+  if (!panel) return;
+  panel.innerHTML = `
+    <div class="pix-box" id="pix-box">
+      <div class="pix-qr-wrap"><img src="${pix.brCodeBase64}" alt="QR Code Pix" class="pix-qr" /></div>
+      <p class="pix-hint">Abra o app do seu banco e escaneie o QR Code, ou copie o código abaixo</p>
+      <div class="pix-code-row">
+        <input type="text" readonly class="pix-code-input" id="pix-code-input" value="${pix.brCode}" />
+        <button class="pix-copy-btn" id="pix-copy-btn" type="button">Copiar</button>
       </div>
+      <div class="pix-status"><span class="pix-spinner"></span> Aguardando pagamento<span class="pix-timer" id="pix-timer"></span></div>
     </div>`;
 
-  document.body.appendChild(modal);
-  document.body.style.overflow = 'hidden';
-  requestAnimationFrame(() => modal.classList.add('open'));
-
-  const close = () => closePixModal();
-  modal.querySelector('#pix-modal-overlay').addEventListener('click', close);
-  modal.querySelector('#pix-modal-close').addEventListener('click', close);
-
-  modal.querySelector('#pix-copy-btn').addEventListener('click', () => {
-    const input = modal.querySelector('#pix-code-input');
+  document.getElementById('pix-copy-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('pix-code-input');
     navigator.clipboard?.writeText(pix.brCode).then(() => {
-      const btn = modal.querySelector('#pix-copy-btn');
+      const btn = document.getElementById('pix-copy-btn');
       btn.textContent = 'Copiado!';
       setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
-    }).catch(() => { input.select(); });
+    }).catch(() => { input?.select(); });
   });
-
-  startPixCountdown(pix.expiresAt);
-  startPixPolling(orderId, apiBaseUrl);
 }
 
 function startPixCountdown(expiresAt) {
@@ -1326,29 +1462,25 @@ function startPixPolling(orderId, apiBaseUrl) {
       if (data.status === 'pago') {
         clearInterval(pixPollTimer);
         clearInterval(pixCountdownTimer);
-        showPixPaid();
+        setCheckoutStep(3);
       }
     } catch { /* falha de rede pontual — tenta de novo no próximo tick */ }
   }, 4000);
 }
 
-function showPixPaid() {
-  const box = document.getElementById('pix-box');
-  if (!box) return;
-  box.innerHTML = `
-    <div class="pix-logo logo-wordmark">thymos</div>
-    <div class="pix-paid-icon">✓</div>
-    <p class="pix-paid-title">Pagamento confirmado!</p>
-    <p class="pix-hint">Obrigada por comprar na Thymos 💚 Você vai receber a confirmação por e-mail em breve.</p>`;
+// ── Passo 3: Confirmação ──
+function renderStep3HTML() {
+  return `
+    <div class="cp-success">
+      <div class="pix-paid-icon">✓</div>
+      <h2 class="cp-step-title">Pagamento confirmado!</h2>
+      <p class="cp-step-sub">Pedido #${checkoutOrderId} — obrigada por comprar na Thymos 💚<br/>Você vai receber a confirmação por e-mail em breve.</p>
+      <button class="cp-continue-btn" id="cp-finish-btn" type="button">Voltar para a loja</button>
+    </div>`;
 }
 
-function closePixModal() {
-  clearInterval(pixPollTimer);
-  clearInterval(pixCountdownTimer);
-  const modal = document.getElementById('pix-modal');
-  if (!modal) return;
-  modal.classList.remove('open');
-  setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
+function wireStep3() {
+  document.getElementById('cp-finish-btn')?.addEventListener('click', closeCheckoutPage);
 }
 
 // ══════════════════════

@@ -9,6 +9,9 @@ export interface NewOrder {
   customerName: string
   customerEmail: string
   customerPhone?: string
+  /** CPF normalizado (só dígitos) — exigido pela AbacatePay para a cobrança
+   * Pix (ver lib/abacatepay.ts#createPixCharge); validado em routes/shop.ts. */
+  customerTaxId: string
   items: OrderItem[]
   /** Soma dos itens (preço real do catálogo × quantidade), antes do cupom. */
   subtotal: number
@@ -83,6 +86,7 @@ export class SupabaseOrdersStore implements OrdersStore {
         cliente_nome: order.customerName,
         cliente_email: order.customerEmail,
         cliente_telefone: order.customerPhone ?? null,
+        cliente_cpf: order.customerTaxId,
         itens: order.items,
         subtotal: order.subtotal,
         cupom: order.couponCode,
