@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import {
   verifyWebhookSignature,
   parseWebhookPayload,
@@ -99,6 +100,26 @@ async function processEvent(payload: NuvemshopWebhookPayload, deps: WebhooksRout
   }
 }
 
+/**
+ * Verifica a assinatura HMAC-SHA256 (base64) que a AbacatePay envia no
+ * header `X-Webhook-Signature`, calculada sobre o corpo bruto da requisição
+ * usando o `secret` cadastrado junto com o webhook (ver docs.abacatepay.com
+ * /pages/webhooks/reference). Nunca lança exceção — qualquer header ausente
+ * ou malformado simplesmente falha a verificação.
+ */
+function verifyAbacatePaySignature(rawBody: Buffer, signatureHeader: unknown, secret: string): boolean {
+  if (typeof signatureHeader !== 'string' || !signatureHeader) return false
+  try {
+    const expected = createHmac('sha256', secret).update(rawBody).digest('base64')
+    const expectedBuf = Buffer.from(expected, 'base64')
+    const receivedBuf = Buffer.from(signatureHeader, 'base64')
+    if (expectedBuf.length !== receivedBuf.length) return false
+    return timingSafeEqual(expectedBuf, receivedBuf)
+  } catch {
+    return false
+  }
+}
+
 export function webhooksRouter(deps: WebhooksRouterDeps): Router {
   const router = Router()
   const { config, eventLog, idempotencyStore, ordersStore, mailer } = deps
@@ -146,11 +167,13 @@ export function webhooksRouter(deps: WebhooksRouterDeps): Router {
   })
 
   // Notificação de pagamento confirmado da AbacatePay (ver lib/abacatepay.ts
-  // e routes/shop.ts, que gera o link de pagamento). Autenticação por segredo
-  // na query string (?webhookSecret=...) em vez de assinatura HMAC — mais
-  // simples de implementar corretamente, e é um método suportado oficialmente
-  // pela AbacatePay como alternativa ao header de assinatura. Configure a
-  // mesma URL + secret no cadastro do webhook no painel da AbacatePay.
+  // e routes/shop.ts, que gera o link de pagamento). Autenticação por
+  // assinatura HMAC-SHA256 no header X-Webhook-Signature (base64, calculada
+  // sobre o corpo bruto usando o "secret" cadastrado junto com o webhook no
+  // painel da AbacatePay) — é o único método que a AbacatePay documenta e
+  // realmente usa: um `?webhookSecret=...` colado na URL de cadastro não
+  // sobrevive (a própria API da AbacatePay descarta a query string da URL
+  // do webhook ao salvar), então não dá pra confiar nisso sozinho.
   router.post('/abacatepay', async (req, res) => {
     if (!ordersStore) {
       res.status(503).json({ error: 'Pedidos indisponíveis — Supabase não configurado' })
@@ -161,9 +184,9 @@ export function webhooksRouter(deps: WebhooksRouterDeps): Router {
       res.status(503).json({ error: 'Webhook não configurado' })
       return
     }
-    if (req.query.webhookSecret !== config.abacatePayWebhookSecret) {
-      logger.warn('Webhook AbacatePay rejeitado: secret ausente ou inválido')
-      await eventLog.record({ level: 'warn', category: 'webhook', message: 'Webhook AbacatePay rejeitado: secret inválido' })
+    if (!req.rawBody || !verifyAbacatePaySignature(req.rawBody, req.headers['x-webhook-signature'], config.abacatePayWebhookSecret)) {
+      logger.warn('Webhook AbacatePay rejeitado: assinatura ausente ou inválida')
+      await eventLog.record({ level: 'warn', category: 'webhook', message: 'Webhook AbacatePay rejeitado: assinatura inválida' })
       res.status(401).json({ error: 'Não autorizado' })
       return
     }
@@ -172,7 +195,7 @@ export function webhooksRouter(deps: WebhooksRouterDeps): Router {
     const event = payload?.event
     const checkoutId = payload?.data?.id
 
-    if (event !== 'checkout.completed' && event !== 'billing.paid') {
+    if (event !== 'checkout.completed') {
       // Outros eventos (estorno, disputa...) são reconhecidos mas ainda não
       // processados — evita que a AbacatePay fique reenviando por 4xx/5xx.
       await eventLog.record({ level: 'info', category: 'webhook', message: `Evento AbacatePay não tratado: ${event ?? 'desconhecido'}` })
