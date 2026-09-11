@@ -178,6 +178,14 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
     // automático). QR Code/copia-e-cola nunca são persistidos — só vivem
     // nesta resposta; o que persiste é o checkoutId (pro webhook casar o
     // pagamento confirmado, ver routes/webhooks.ts).
+    //
+    // NUNCA manda `customer`: testado em produção e a AbacatePay recusa a
+    // cobrança inteira ("Value should be one of 'object', 'object'") sempre
+    // que esse objeto vem sem `taxId` (CPF) — e o checkout do storefront não
+    // coleta CPF hoje. `customer` é documentado como opcional e funciona
+    // perfeitamente sem ele; se um dia quisermos o nome do cliente associado
+    // ao Pix (nota fiscal, etc.), aí sim precisa coletar CPF no checkout e
+    // validar antes de mandar.
     let pix: { checkoutId: string; brCode: string; brCodeBase64: string; expiresAt: string } | null = null
     if (abacatePayClient && total > 0) {
       try {
@@ -186,7 +194,6 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
           description: `Pedido Thymos #${orderId}`,
           externalId: `pedido-${orderId}`,
           expiresIn: 1800, // 30 minutos
-          customer: { name: customerName, email: customerEmail, cellphone: customerPhone || undefined },
         })
         await ordersStore.attachPayment(orderId, { provider: 'abacatepay', checkoutId: charge.checkoutId, url: null, status: charge.status })
         pix = { checkoutId: charge.checkoutId, brCode: charge.brCode, brCodeBase64: charge.brCodeBase64, expiresAt: charge.expiresAt }
