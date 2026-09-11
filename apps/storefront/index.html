@@ -570,24 +570,17 @@
       </svg>
       Finalizar Compra
     </button>
-    <!-- Captura de pedido (sem gateway de pagamento próprio ainda): coleta
-         contato do cliente e registra via apps/api → Supabase. A loja entra
-         em contato para confirmar pagamento/frete. Ver script.js. -->
-    <form id="checkout-form" class="checkout-form" style="display:none">
-      <input type="text" id="checkout-name" placeholder="Nome completo" autocomplete="name" required />
-      <input type="email" id="checkout-email" placeholder="E-mail" autocomplete="email" required />
-      <input type="tel" id="checkout-phone" placeholder="WhatsApp (opcional)" autocomplete="tel" />
-      <button type="submit" class="checkout-btn" id="checkout-confirm-btn">Confirmar Pedido</button>
-      <button type="button" class="checkout-cancel-btn" id="checkout-cancel">Cancelar</button>
-    </form>
-    <p class="coupon-msg" id="checkout-msg" style="text-align:center"></p>
+    <!-- Abre a página de checkout própria (#checkout-page, montada em
+         script.js) — dados do cliente → pagamento Pix (QR Code/copia-e-cola
+         gerado pela AbacatePay, ver apps/api/src/routes/shop.ts) →
+         confirmação. Cartão de crédito aparece na estrutura mas fica
+         desabilitado ("Em breve") até a conta AbacatePay ter cartão
+         homologado — nunca oferecemos um método que ainda não processa de
+         verdade. -->
     <div class="pay-row">
       <span class="pay-lbl">Aceito:</span>
       <div class="pay-icons">
         <div class="pay-icon">PIX</div>
-        <div class="pay-icon">Visa</div>
-        <div class="pay-icon">MC</div>
-        <div class="pay-icon">Boleto</div>
       </div>
     </div>
   </div>
@@ -674,7 +667,7 @@ function handleWbForm(e){
   // caixa sem aplicar nada. cartDiscount/appliedCouponCode/updateCartUI vêm
   // de script.js (mesmo escopo global de módulo clássico do documento) —
   // appliedCouponCode precisa ir junto: é o que o checkout manda pro
-  // servidor validar de verdade (ver submitOrder()).
+  // servidor validar de verdade (ver createPixOrder() em script.js).
   cartDiscount = 0.10;
   appliedCouponCode = 'THYMOS10';
   updateCartUI();

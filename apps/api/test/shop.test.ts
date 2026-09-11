@@ -147,10 +147,12 @@ describe('shopRouter — /products (integração)', () => {
 })
 
 describe('shopRouter — /orders (integração)', () => {
+  const VALID_CPF = '529.982.247-25' // CPF de teste com dígito verificador válido
   const validBody = {
     customerName: 'Ana Silva',
     customerEmail: 'ana@example.com',
     customerPhone: '11999999999',
+    customerTaxId: VALID_CPF,
     items: [{ productId: 1, qty: 1 }],
   }
 
@@ -158,6 +160,15 @@ describe('shopRouter — /orders (integração)', () => {
     const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
     const res = await request(app).post('/orders').send({ customerName: 'Ana' })
     expect(res.status).toBe(400)
+  })
+
+  it('rejeita CPF com dígito verificador inválido', async () => {
+    const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore())
+    const res = await request(app)
+      .post('/orders')
+      .send({ ...validBody, customerTaxId: '111.111.111-11' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/CPF/)
   })
 
   it('rejeita item malformado (sem productId numérico ou qty positivo)', async () => {
@@ -299,7 +310,12 @@ describe('shopRouter — /orders (integração)', () => {
         expiresAt: '2026-01-01T00:00:00.000Z',
       })
       expect(abacatePayClient.createPixCharge).toHaveBeenCalledWith(
-        expect.objectContaining({ amountCents: 42900, externalId: 'pedido-10', expiresIn: 1800 })
+        expect.objectContaining({
+          amountCents: 42900,
+          externalId: 'pedido-10',
+          expiresIn: 1800,
+          customer: expect.objectContaining({ name: 'Ana Silva', email: 'ana@example.com', taxId: '52998224725' }),
+        })
       )
       expect(orders.attachPayment).toHaveBeenCalledWith(
         10,

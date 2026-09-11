@@ -32,7 +32,7 @@ export interface CreatePixChargeParams {
   externalId: string
   /** Segundos até o QR Code expirar. */
   expiresIn: number
-  customer?: { name?: string; email?: string; cellphone?: string }
+  customer?: { name?: string; email?: string; cellphone?: string; taxId?: string }
 }
 
 export interface PixCharge {
