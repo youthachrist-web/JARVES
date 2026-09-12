@@ -467,6 +467,24 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .testi-author strong{display:block;font-size:.72rem;font-weight:700;letter-spacing:.04em;color:var(--gray-700);text-transform:uppercase;margin-bottom:1px}
 .testi-author span{font-size:.58rem;color:var(--nude);letter-spacing:.1em;text-transform:uppercase}
 
+/* Carrossel "Performance No Dia a Dia" — fotos/vídeos reais de clientes,
+   dentro da mesma seção de Comunidade (#community), logo abaixo dos
+   depoimentos escritos. Reaproveita .prod-carousel/.prod-grid/.prod-dots
+   (mesmo comportamento de setas/scroll-snap do carrossel de produtos) e
+   .ig-hover (mesmo overlay do feed do Instagram). */
+.community-sub-header{text-align:center;max-width:520px;margin:56px auto 32px;padding-top:40px;border-top:1px solid var(--beige)}
+.community-sub-header h3{font-family:var(--font-display);font-size:clamp(1.3rem,3vw,1.7rem);letter-spacing:.03em;line-height:1.1;text-transform:uppercase;color:var(--black);margin-bottom:10px}
+.community-sub-header h3 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(--nude-dark)}
+.community-sub-header p{font-size:.82rem;color:var(--gray-600);font-weight:300}
+.community-item{position:relative;flex:0 0 200px;scroll-snap-align:start;aspect-ratio:4/5;border-radius:4px;overflow:hidden;background:var(--nude-pale);display:block}
+.community-item img,.community-video{width:100%;height:100%;object-fit:cover;display:block}
+.community-play{position:absolute;bottom:11px;left:11px;width:30px;height:30px;border-radius:50%;background:rgba(11,19,15,.55);backdrop-filter:blur(3px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}
+.community-item:hover .community-play{opacity:0}
+@media(max-width:768px){
+  .community-item{flex-basis:150px}
+  .community-sub-header{margin:40px auto 24px;padding-top:28px}
+}
+
 /* ════════════════════════════════
    CARRINHO
 ════════════════════════════════ */

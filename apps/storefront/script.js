@@ -993,6 +993,84 @@ function initProductsDots() {
   updateDots();
 }
 
+// ══════════════════════
+// CARROSSEL DE COMUNIDADE (#community-grid — "Performance No Dia a Dia")
+// ══════════════════════
+// Mesmo padrão do carrossel de produtos acima, mas com um conjunto fixo de
+// itens estáticos (fotos/vídeos reais enviados, não vindos da API) — por
+// isso os dots contam os filhos de #community-grid direto do DOM, em vez
+// de percorrer um array carregado assincronamente.
+function initCommunityCarousel() {
+  const track = document.getElementById('community-grid');
+  const prevBtn = document.getElementById('community-car-prev');
+  const nextBtn = document.getElementById('community-car-next');
+  if (!track || !prevBtn || !nextBtn) return;
+
+  const scrollByPage = dir => {
+    track.scrollBy({ left: dir * track.clientWidth * 0.9, behavior: 'smooth' });
+  };
+  prevBtn.addEventListener('click', () => scrollByPage(-1));
+  nextBtn.addEventListener('click', () => scrollByPage(1));
+
+  const updateArrows = () => {
+    const maxScroll = track.scrollWidth - track.clientWidth - 2;
+    prevBtn.disabled = track.scrollLeft <= 0;
+    nextBtn.disabled = maxScroll <= 0 || track.scrollLeft >= maxScroll;
+    prevBtn.style.opacity = prevBtn.disabled ? '.35' : '1';
+    nextBtn.style.opacity = nextBtn.disabled ? '.35' : '1';
+  };
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  window.addEventListener('resize', updateArrows);
+  updateArrows();
+}
+
+function initCommunityDots() {
+  const dotsWrap = document.getElementById('community-dots');
+  const track = document.getElementById('community-grid');
+  if (!dotsWrap || !track) return;
+  const items = Array.from(track.children);
+  if (items.length === 0) return;
+
+  dotsWrap.innerHTML = '';
+  items.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'prod-dot' + (i === 0 ? ' active' : '');
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  const updateDots = () => {
+    const item = track.querySelector('.community-item');
+    if (!item) return;
+    const step = item.getBoundingClientRect().width + 14; // mesmo gap do .prod-grid no mobile
+    const idx = Math.min(dots.length - 1, Math.round(track.scrollLeft / step));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  };
+  track.addEventListener('scroll', updateDots, { passive: true });
+  window.addEventListener('resize', updateDots);
+  updateDots();
+}
+
+// Toca/pausa cada <video> do carrossel de comunidade só enquanto ele está
+// visível na tela — evita rodar 3 vídeos ao mesmo tempo fora da vitrine
+// (gasto de dados/bateria à toa, especialmente no mobile). Mudo e em loop,
+// então tocar automaticamente é permitido pelos navegadores sem interação.
+function initCommunityVideos() {
+  const videos = document.querySelectorAll('.community-video');
+  if (videos.length === 0) return;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const video = entry.target;
+      if (entry.isIntersecting) {
+        video.play().catch(() => { /* autoplay bloqueado — sem problema, o poster continua visível */ });
+      } else {
+        video.pause();
+      }
+    });
+  }, { threshold: .35 });
+  videos.forEach(v => io.observe(v));
+}
+
 // "Nudge": um pequeno vai-e-volta automático a primeira vez que o
 // carrossel entra na tela — sinaliza que dá pra arrastar/rolar sem
 // precisar de instrução escrita. Só no mobile (onde as setas já não
@@ -1658,6 +1736,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initProductsCarousel();
   initProductsDots();
   initProductsNudge();
+  initCommunityCarousel();
+  initCommunityDots();
+  initCommunityVideos();
   renderCollectionsShowcase();
   initReveal();
   initCursorGlow();
