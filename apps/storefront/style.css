@@ -368,7 +368,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .lifestyle-tag{font-size:.58rem;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--nude-light);margin-bottom:14px}
 .lifestyle-h{font-family:var(--font-display);font-size:clamp(2.6rem,6vw,6rem);letter-spacing:.04em;line-height:.94;color:var(--white);text-transform:uppercase;margin-bottom:20px}
 .lifestyle-h em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(--nude-light);font-size:.9em}
-.lifestyle-p{font-size:.86rem;color:rgba(255,255,255,.5);line-height:1.85;font-weight:300;margin-bottom:34px;max-width:340px}
+.lifestyle-p{font-size:.98rem;color:rgba(255,255,255,.88);line-height:1.8;font-weight:300;margin-bottom:34px;max-width:360px}
 .lifestyle-btns{display:flex;gap:14px;flex-wrap:wrap}
 
 /* ════════════════════════════════
@@ -428,7 +428,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .story-icon{width:52px;height:52px;border-radius:50%;overflow:hidden;margin-bottom:14px;line-height:1}
 .story-icon img{width:100%;height:100%;object-fit:cover;display:block}
 .story-card h3{font-family:var(--font-display);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;color:var(--black);margin-bottom:12px}
-.story-card p{font-size:.78rem;color:var(--gray-400);line-height:1.8;font-weight:300}
+.story-card p{font-size:.86rem;color:var(--gray-600);line-height:1.8;font-weight:300}
 /* Tagline em destaque — banner de texto centralizado, sem foto */
 .story-tagline .split-info{justify-content:center}
 /* Bloco final de Tecnologia Sustentável — centralizado, fora do grid de
@@ -436,8 +436,8 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
    de certificação (extraídos do Manual da Marca) */
 .story-tech{max-width:920px;margin:0 auto;text-align:center;padding:40px 32px;background:var(--off-white);border:1.5px solid var(--beige);border-radius:6px}
 .story-tech h3{font-family:var(--font-display);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;color:var(--black);margin-bottom:12px}
-.story-tech p{font-size:.78rem;color:var(--gray-400);line-height:1.8;font-weight:300;max-width:520px;margin:0 auto 28px}
-.cert-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.story-tech p{font-size:.86rem;color:var(--gray-600);line-height:1.8;font-weight:300;max-width:520px;margin:0 auto 28px}
+.cert-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px 20px}
 .cert-grid img{width:100%;height:auto;border-radius:4px}
 
 /* ════════════════════════════════
@@ -730,7 +730,7 @@ details.modal-details summary:hover{color:var(--nude)}
 .bm-tag{font-size:.58rem;font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:var(--nude);margin-bottom:16px}
 .bm-quote{font-family:var(--font-display);font-size:clamp(2.4rem,5vw,4.8rem);letter-spacing:.04em;line-height:1;color:var(--black);text-transform:uppercase;margin-bottom:24px;font-style:normal}
 .bm-quote em{font-family:var(--font-serif);font-style:italic;color:var(--nude);font-weight:300;font-size:.88em}
-.bm-body{font-size:.85rem;color:var(--gray-400);line-height:1.9;max-width:400px;margin-bottom:30px;font-weight:300}
+.bm-body{font-size:.94rem;color:var(--gray-600);line-height:1.85;max-width:420px;margin-bottom:30px;font-weight:300}
 .bm-viz{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .bv-item{border-radius:4px;overflow:hidden}
 .bv-in{width:100%;transition:transform .5s var(--ease)}
@@ -834,7 +834,7 @@ details.modal-details summary:hover{color:var(--nude)}
   .brand-msg{padding:72px 20px}
   .brand-story{padding:56px 20px}
   .story-grid{grid-template-columns:1fr}
-  .cert-grid{grid-template-columns:1fr 1fr}
+  .cert-grid{grid-template-columns:1fr}
   .collection{padding:72px 20px}
   .coll-showcase{grid-template-columns:repeat(2,1fr);gap:16px 11px}
   .ig-feed{padding:56px 20px}
