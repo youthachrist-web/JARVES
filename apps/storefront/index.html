@@ -445,13 +445,26 @@
   <div class="story-tech reveal">
     <h3>Tecnologia Sustentável</h3>
     <p>Os tecidos que utilizamos em nossos produtos possuem certificações que comprovam nosso compromisso com a sustentabilidade:</p>
-    <div class="cert-grid">
-      <img src="assets/badges/badge-sou-de-algodao.png" alt="Selo Sou de Algodão — rastreia a origem do algodão responsável" loading="lazy"/>
-      <img src="assets/badges/badge-amni-soul-eco.png" alt="Selo Amni Soul Eco — primeiro fio de poliamida biodegradável do mundo" loading="lazy"/>
-      <img src="assets/badges/badge-green-fiber.png" alt="Selo Green Fiber — certificação de proteção ao meio ambiente" loading="lazy"/>
-      <img src="assets/badges/badge-eco-logic.png" alt="Selo Eco Logic — processo de fabricação ambientalmente sustentável" loading="lazy"/>
-    </div>
   </div>
+  <!-- Carrossel dos selos — cada um vira um card maior (fundo branco,
+       sombra, zoom suave no hover) em vez do grid 2x2 apertado de antes;
+       mesmo padrão de setas/scroll-snap/dots dos outros carrosséis do
+       site (ver initCertCarousel em script.js). -->
+  <div class="prod-carousel cert-carousel reveal">
+    <button class="prod-car-btn prod-car-prev" id="cert-car-prev" aria-label="Selo anterior">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="prod-grid cert-grid" id="cert-grid">
+      <div class="cert-card reveal" data-delay="0"><img src="assets/badges/badge-sou-de-algodao.png" alt="Selo Sou de Algodão — rastreia a origem do algodão responsável" loading="lazy"/></div>
+      <div class="cert-card reveal" data-delay="80"><img src="assets/badges/badge-amni-soul-eco.png" alt="Selo Amni Soul Eco — primeiro fio de poliamida biodegradável do mundo" loading="lazy"/></div>
+      <div class="cert-card reveal" data-delay="160"><img src="assets/badges/badge-green-fiber.png" alt="Selo Green Fiber — certificação de proteção ao meio ambiente" loading="lazy"/></div>
+      <div class="cert-card reveal" data-delay="240"><img src="assets/badges/badge-eco-logic.png" alt="Selo Eco Logic — processo de fabricação ambientalmente sustentável" loading="lazy"/></div>
+    </div>
+    <button class="prod-car-btn prod-car-next" id="cert-car-next" aria-label="Próximo selo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <div class="prod-dots" id="cert-dots" aria-hidden="true"></div>
 </section>
 
 <!-- ═══════════════════════════════════════════
