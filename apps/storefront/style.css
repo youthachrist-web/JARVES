@@ -687,12 +687,20 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .prod-modal.open{opacity:1}
 .prod-modal.open .modal-box{transform:scale(1) translateY(0)}
 .modal-scrim{position:absolute;inset:0;background:rgba(20,26,22,.65);backdrop-filter:blur(7px)}
-.modal-box{position:relative;z-index:1;background:var(--white);border-radius:6px;width:100%;max-width:960px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;transform:scale(.97) translateY(18px);transition:transform .4s var(--bounce);box-shadow:var(--sh2)}
+.modal-box{position:relative;z-index:1;background:var(--white);border-radius:6px;width:100%;max-width:960px;max-height:95vh;overflow:hidden;display:flex;flex-direction:column;transform:scale(.97) translateY(18px);transition:transform .4s var(--bounce);box-shadow:var(--sh2)}
 .modal-x{position:absolute;top:13px;right:13px;z-index:10;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:rgba(20,26,22,.07);border:1px solid var(--beige);border-radius:50%;color:var(--gray-500);font-size:.75rem;cursor:pointer;transition:all .2s}
 .modal-x:hover{background:var(--black);color:#fff;border-color:var(--black)}
 .modal-grid{display:grid;grid-template-columns:1.1fr 1fr;overflow:hidden;flex:1}
 /* galeria */
-.modal-gallery-side{position:relative;background:var(--cream);border-right:1px solid var(--beige);display:flex;flex-direction:column}
+/* min-height:0 é essencial aqui: por padrão, um item de grid não encolhe
+   abaixo do tamanho do seu próprio conteúdo ("min-height:auto" implícito),
+   então sem isso .modal-info cresce além da altura real da .modal-grid em
+   telas mais baixas — a parte de baixo (frete/troca/pagamento) fica
+   cortada silenciosamente pelo overflow:hidden da .modal-box, sem gerar
+   nenhuma barra de rolagem (bug clássico de grid/flex). Com min-height:0,
+   a .modal-info respeita a altura real disponível e o overflow-y:auto
+   dela passa a funcionar de verdade quando o conteúdo não cabe. */
+.modal-gallery-side{position:relative;background:var(--cream);border-right:1px solid var(--beige);display:flex;flex-direction:column;min-height:0}
 .modal-badge-tag{position:absolute;top:13px;left:13px;background:var(--black);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:5px 11px;border-radius:2px;z-index:3}
 .modal-badge-tag.new{background:var(--nude)}
 .gallery-main{flex:1;position:relative;overflow:hidden;min-height:340px}
@@ -708,21 +716,21 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .g-thumb.on{border-color:var(--nude);opacity:1}
 .g-thumb:hover{opacity:.8}
 /* info */
-.modal-info{padding:26px 26px 22px;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--nude) transparent}
+.modal-info{padding:22px 26px 16px;overflow-y:auto;display:flex;flex-direction:column;min-height:0;scrollbar-width:thin;scrollbar-color:var(--nude) transparent}
 .modal-cat{font-size:.56rem;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--nude);margin-bottom:5px}
-.modal-name{font-family:var(--font-display);font-size:clamp(1.3rem,3vw,1.85rem);letter-spacing:.04em;line-height:1.05;color:var(--black);text-transform:uppercase;margin-bottom:11px}
+.modal-name{font-family:var(--font-display);font-size:clamp(1.3rem,3vw,1.85rem);letter-spacing:.04em;line-height:1.05;color:var(--black);text-transform:uppercase;margin-bottom:8px}
 .modal-price-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:3px}
 .modal-price{font-family:var(--font-display);font-size:1.75rem;letter-spacing:.04em;color:var(--gray-700)}
 .modal-old{font-size:.8rem;color:var(--gray-300);text-decoration:line-through}
 .modal-disc{font-size:.6rem;font-weight:800;color:#3a8c5c;background:rgba(58,140,74,.08);padding:3px 8px;border-radius:3px}
-.modal-install{font-size:.76rem;color:var(--gray-600);margin-bottom:11px}
+.modal-install{font-size:.76rem;color:var(--gray-600);margin-bottom:8px}
 .modal-install strong{color:var(--gray-600)}
-.modal-stock-tag{font-size:.66rem;font-weight:700;padding:6px 11px;border-radius:var(--r);margin-bottom:11px;display:inline-block}
+.modal-stock-tag{font-size:.66rem;font-weight:700;padding:5px 11px;border-radius:var(--r);margin-bottom:8px;display:inline-block}
 .modal-stock-tag.ok{background:rgba(58,140,74,.06);color:#3a8c5c;border:1px solid rgba(58,140,74,.18)}
 .modal-stock-tag.med{background:rgba(184,144,106,.08);color:var(--nude-dark);border:1px solid rgba(184,144,106,.18)}
 .modal-stock-tag.low{background:rgba(180,55,55,.06);color:#b8453a;border:1px solid rgba(180,55,55,.18);animation:stockPulse 2s ease-in-out infinite}
-.modal-desc{font-size:.9rem;color:var(--gray-600);line-height:1.85;font-weight:300;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--beige)}
-.modal-sec{margin-bottom:12px}
+.modal-desc{font-size:.9rem;color:var(--gray-600);line-height:1.7;font-weight:300;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--beige)}
+.modal-sec{margin-bottom:9px}
 .modal-sec-title{font-size:.56rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gray-300);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
 .modal-size-guide{font-size:.56rem;color:var(--nude);text-decoration:underline;text-underline-offset:2px}
 .modal-hint{font-size:.6rem;color:#b8453a;margin-top:4px}
@@ -743,18 +751,24 @@ details.modal-details summary:hover{color:var(--nude)}
 .details-list{list-style:none;display:flex;flex-direction:column;gap:5px;padding:8px 0 3px}
 .details-list li{font-size:.82rem;color:var(--gray-600);padding-left:13px;position:relative;line-height:1.6;font-weight:300}
 .details-list li::before{content:'—';position:absolute;left:0;color:var(--nude);font-size:.58rem}
-.modal-qty-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0 5px;border-top:1px solid var(--beige);margin-top:7px}
+.modal-qty-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;border-top:1px solid var(--beige);margin-top:5px}
 .modal-qty-lbl{font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gray-300)}
 .modal-qty-ctrl{display:flex;align-items:center;gap:13px;border:1.5px solid var(--beige);border-radius:var(--r);padding:5px 13px}
 .mq-btn{color:var(--gray-300);font-size:1rem;line-height:1;width:17px;text-align:center;transition:color .2s;cursor:pointer}
 .mq-btn:hover{color:var(--black)}
 .mq-num{font-size:.8rem;font-weight:700;color:var(--gray-700);min-width:20px;text-align:center}
-.modal-actions{display:flex;gap:9px;margin:12px 0 13px}
+.modal-actions{display:flex;gap:9px;margin:9px 0 8px}
 .modal-add-btn{flex:1}
 .wishlist-btn{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--beige);border-radius:var(--r);color:var(--gray-300);cursor:pointer;transition:all .25s;flex-shrink:0}
 .wishlist-btn:hover{border-color:#b8453a;color:#b8453a}
-.modal-shipping-info{display:flex;flex-direction:column;gap:6px;padding:11px;background:var(--cream);border-radius:var(--r);border:1px solid var(--beige)}
-.msi-item{display:flex;align-items:center;gap:7px;font-size:.76rem;color:var(--gray-600);font-weight:300}
+/* "Comprar Agora" — mesma largura do botão de adicionar, cor de destaque
+   (nude) pra diferenciar visualmente da ação primária escura acima */
+.modal-buy-btn{width:100%;justify-content:center;padding:12px 34px;margin-bottom:10px}
+/* Compacto em 1-2 linhas (flex-wrap) em vez de 3 linhas empilhadas — ajuda
+   o painel de informações a caber inteiro ao lado da imagem, sem scroll
+   interno, mesmo com o botão "Comprar Agora" a mais. */
+.modal-shipping-info{display:flex;flex-direction:row;flex-wrap:wrap;gap:5px 14px;padding:9px 11px;background:var(--cream);border-radius:var(--r);border:1px solid var(--beige)}
+.msi-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--gray-600);font-weight:300;white-space:nowrap}
 
 /* ════════════════════════════════
    SOBRE / BRAND MESSAGE
