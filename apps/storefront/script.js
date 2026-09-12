@@ -568,6 +568,9 @@ function openModal(productId) {
               </svg>
             </button>
           </div>
+          <button class="btn-nude modal-buy-btn" id="modal-buy-btn" data-id="${p.id}">
+            Comprar Agora
+          </button>
 
           <div class="modal-shipping-info">
             <div class="msi-item">${ICONS.truck} <span>Frete grátis acima de R$${FREE_SHIPPING}</span></div>
@@ -598,19 +601,24 @@ function openModal(productId) {
     if (qty > 1) { qty--; qtyNum.textContent = qty; }
   });
 
-  // Adicionar ao carrinho com quantidade
-  modal.querySelector('#modal-add-btn').addEventListener('click', function() {
+  // Valida que um tamanho foi escolhido (quando o produto tem mais de um) —
+  // reaproveitado tanto por "Adicionar ao Carrinho" quanto por "Comprar
+  // Agora", já que as duas ações partem do mesmo requisito.
+  function hasValidSize() {
     const sizesEl = modal.querySelector(`#modal-sizes-${p.id}`);
     const hintEl  = modal.querySelector(`#size-hint-${p.id}`);
-    if (sizesEl && p.sizes.length > 1) {
-      const selected = sizesEl.querySelector('.size-btn.on');
-      if (!selected) {
-        hintEl.style.display = 'block';
-        sizesEl.classList.add('shake');
-        setTimeout(() => sizesEl.classList.remove('shake'), 500);
-        return;
-      }
+    if (sizesEl && p.sizes.length > 1 && !sizesEl.querySelector('.size-btn.on')) {
+      hintEl.style.display = 'block';
+      sizesEl.classList.add('shake');
+      setTimeout(() => sizesEl.classList.remove('shake'), 500);
+      return false;
     }
+    return true;
+  }
+
+  // Adicionar ao carrinho com quantidade
+  modal.querySelector('#modal-add-btn').addEventListener('click', function() {
+    if (!hasValidSize()) return;
     addToCart(p.id, this, qty);
     // fromHistory=true: addToCart() já abriu o carrinho por cima do modal
     // (empilhando o próprio estado no histórico) — se este fechamento
@@ -619,6 +627,16 @@ function openModal(productId) {
     // engano assim que ele abrisse. O estado do modal fica "por baixo",
     // sem problema: só é consumido quando o carrinho for fechado depois.
     setTimeout(() => closeModal(true), 900);
+  });
+
+  // "Comprar Agora" — mesma validação, mas pula o carrinho/drawer e vai
+  // direto pro checkout com o item já adicionado (openDrawer:false evita a
+  // gaveta abrir e fechar de novo instantaneamente antes do checkout).
+  modal.querySelector('#modal-buy-btn').addEventListener('click', function() {
+    if (!hasValidSize()) return;
+    addToCart(p.id, null, qty, { openDrawer: false });
+    closeModal(true);
+    handleCheckout();
   });
 }
 
@@ -1157,7 +1175,7 @@ function observeCards(cards) {
 // ══════════════════════
 // CARRINHO
 // ══════════════════════
-function addToCart(productId, btn, qty = 1) {
+function addToCart(productId, btn, qty = 1, { openDrawer = true } = {}) {
   const p = products.find(x => x.id === productId);
   if (!p) return;
 
@@ -1177,7 +1195,10 @@ function addToCart(productId, btn, qty = 1) {
   }
 
   updateCartUI();
-  openCart();
+  // "Comprar Agora" (modal-buy-btn) passa openDrawer:false — vai direto pro
+  // checkout logo em seguida, então abrir a gaveta do carrinho só pra
+  // fechá-la de novo no instante seguinte seria um pisca-pisca sem sentido.
+  if (openDrawer) openCart();
 }
 
 function removeFromCart(id) {
