@@ -522,7 +522,19 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .csb-track{height:3px;background:var(--beige);border-radius:3px;overflow:hidden}
 .csb-fill{height:100%;background:linear-gradient(to right,var(--nude-dark),var(--nude));border-radius:3px;transition:width .6s var(--ease)}
 /* items */
-.cart-items-list{flex:1;overflow-y:auto;padding:0}
+/* flex:0 1 auto (não "flex:1") de propósito: com poucos itens (o caso mais
+   comum, logo após clicar "Adicionar ao Carrinho"), a lista não deve
+   esticar pra preencher a gaveta inteira — isso empurrava o rodapé
+   (cupão/total/finalizar) pra baixo, deixando um vão em branco enorme
+   entre o item e o botão. Assim a lista só ocupa a altura do conteúdo (e
+   ainda encolhe/rola de verdade — min-height:0 — quando os itens juntos
+   não cabem), com o rodapé colado logo abaixo; qualquer sobra de espaço
+   fica no fim da gaveta, bem menos estranho do que no meio. */
+.cart-items-list{flex:0 1 auto;min-height:0;overflow-y:auto;padding:0}
+/* Só no carrinho vazio (classe alternada em updateCartUI()) volta a
+   esticar — precisa disso pra .cart-empty-state{height:100%} centralizar
+   o ícone/texto ocupando a gaveta inteira, como antes. */
+.cart-items-list.is-empty{flex:1}
 .cart-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:280px;gap:10px;text-align:center;padding:40px 24px}
 .ces-icon{width:64px;height:64px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;color:var(--gray-300);margin-bottom:6px}
 .ces-title{font-size:.8rem;font-weight:700;letter-spacing:.04em;color:var(--gray-700);text-transform:uppercase}
