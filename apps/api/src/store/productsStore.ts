@@ -36,6 +36,21 @@ function splitList(value: string | null): string[] {
     .filter(Boolean)
 }
 
+// Os únicos tamanhos de roupa que a loja realmente vende são P, M, G e GG —
+// o cadastro no Supabase (`tamanhos`) acumulou valores inconsistentes por
+// produto (PP, XG, 2XG, "Plus Size", "Único" misturados nas peças de
+// roupa). Normaliza para essa lista fixa, na ordem canônica, mantendo só o
+// que o produto realmente tem. Uma lista sem nenhum tamanho de roupa (ex.:
+// acessórios com "Único", ou volumes como "500ml") não é tocada — ela não
+// tem nada em ALLOWED_CLOTHING_SIZES pra filtrar, então splitList() original
+// é preservada como está.
+const ALLOWED_CLOTHING_SIZES = ['P', 'M', 'G', 'GG'] as const
+
+function normalizeSizes(rawSizes: string[]): string[] {
+  const filtered = ALLOWED_CLOTHING_SIZES.filter((size) => rawSizes.includes(size))
+  return filtered.length > 0 ? filtered : rawSizes
+}
+
 function normalize(row: ProdutoRow): Product {
   return {
     id: row.id,
@@ -45,7 +60,7 @@ function normalize(row: ProdutoRow): Product {
     // 0 no banco significa "sem promoção" (não um preço promocional real de R$0)
     promotionalPrice: row.preco_promocional && Number(row.preco_promocional) > 0 ? Number(row.preco_promocional) : null,
     stock: row.estoque ?? 0,
-    sizes: splitList(row.tamanhos),
+    sizes: normalizeSizes(splitList(row.tamanhos)),
     colors: splitList(row.cores),
     description: row.descricao ?? '',
     images: row.imagens ?? [],

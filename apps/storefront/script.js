@@ -46,7 +46,7 @@ const MOCK_PRODUCTS_FALLBACK = [
       'assets/products/conjunto-sculpt-graphite.jpeg',
       'assets/products/conjunto-sculpt-graphite-2.jpeg',
     ],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'A Legging Sculpt Pro foi desenvolvida para quem leva o treino a sério. Com tecido compressivo de alta performance, ela modela e sustenta sem apertar — do agachamento ao sprint.',
     details: ['Tecido 78% Poliamida + 22% Elastano', 'Compressão média-alta', 'Cintura alta com faixa antiderrapante', 'Secagem rápida e antiodor', 'Bolso lateral discreto'],
   },
@@ -64,7 +64,7 @@ const MOCK_PRODUCTS_FALLBACK = [
       'assets/products/conjunto-sculpt-shorts-graphite.jpeg',
       'assets/products/conjunto-sculpt-shorts-graphite-2.jpeg',
     ],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'O Top Power Seamless combina suporte firme com conforto absoluto. Ideal para treinos de alta intensidade, ele oferece sustentação em arco sem aro, bojo removível e alças largas reguláveis.',
     details: ['Tecido Seamless 4D-Stretch', 'Suporte médio-alto', 'Bojo removível', 'Alças reguláveis cruzadas', 'Proteção UV 50+'],
   },
@@ -99,7 +99,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#cbd1c3', '#adb79f',],
     bg: 'linear-gradient(145deg, #e3e5df, #d7dad2, #cbd1c3)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Com efeito sculpt na região do glúteo e costura estratégica que realça as curvas. Cós duplo com regulagem interna.',
     details: ['Tecido PowerFlex com efeito sculpt', 'Cós duplo com elástico interno', 'Costuras anatômicas', 'Comprimento mid-thigh', 'Resistente ao cloro'],
   },
@@ -114,7 +114,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#556e4f',],
     bg: 'linear-gradient(145deg, #dbded6, #cfd3c9, #c4cbb9)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G', 'GG', 'XGG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Desenvolvida com tecnologia de mapeamento corporal. Painéis estratégicos que moldam a silhueta. Cintura ultra-alta que não cede.',
     details: ['Tecnologia de mapeamento corporal', 'Painéis de compressão estratégica', 'Cintura alta de 10cm', 'Tecido opaco garantido', 'Bolso traseiro com zíper'],
   },
@@ -129,7 +129,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#2b4539',],
     bg: 'linear-gradient(145deg, #e7e9e5, #e1e3dd, #d7dad2)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Minimalista e poderosa. Ideal para yoga e pilates. Suporte leve, design sem costuras.',
     details: ['Tecido ultra-macio Flow Touch', 'Suporte leve', 'Design sem costura', 'Bojo fixo anatômico', 'Detalhes em ribana'],
   },
@@ -144,7 +144,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#c4cbb9', '#dcdfd7', '#aeb8a0'],
     bg: 'linear-gradient(145deg, #e3e5df, #d7dad2, #cbd1c2)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Legging Sculpt Pro + Top Power Seamless numa combinação que foi feita para você arrasar. Cores coordenadas e desconto especial.',
     details: ['Inclui Legging + Top da mesma coleção', 'Embalagem especial para presente', 'Código de desconto na próxima compra', 'Disponível em cores exclusivas de kit'],
   },
@@ -159,7 +159,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#c0c7b5', '#d3d6cd', '#aab49c'],
     bg: 'linear-gradient(145deg, #d9dcd5, #cfd3c9, #c5cbbb)',
     images: ['assets/products/thymos-leggings.jpeg'],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Inserções de tela respirável nas laterais e atrás dos joelhos para ventilação máxima. Design ousado com contraste de texturas.',
     details: ['Painéis em mesh respirável', 'Compressão média', 'Recortes estratégicos', 'Cintura dupla com bolso', 'Costura flat-lock'],
   },
@@ -174,7 +174,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#c0c7b5', '#d7dad2', '#a7b197'],
     bg: 'linear-gradient(145deg, #dfe1db, #d1d5cb, #c4cbb9)',
     images: ['assets/products/top-esportivo.jpeg'],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Seamless de segunda geração que se adapta ao corpo como uma segunda pele. Para functional training, corrida e HIIT.',
     details: ['Seamless de segunda geração', 'Suporte médio com compressão gradual', 'Alças fixas cruzadas', 'Bojo removível', 'Antiodor permanente'],
   },
@@ -189,7 +189,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#cdd1c7', '#e5e7e1', '#b6bfaa'],
     bg: 'linear-gradient(145deg, #e6e9e3, #dde0d9, #d1d5cb)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Tecido ribana especial que valoriza cada curva sem apertar. Comprimento mini com cós franzido.',
     details: ['Tecido Ribana 4-way stretch', 'Cós franzido com elástico interno', 'Comprimento mini (±30cm)', 'Forração interna', 'Lavável à máquina'],
   },
@@ -209,7 +209,7 @@ const MOCK_PRODUCTS_FALLBACK = [
       'assets/products/conjunto-onyx-power-3.jpg',
       'assets/products/conjunto-onyx-power-4.jpg',
     ],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Coleção Onyx — edição limitada. Bandeau top + shorts em preto absoluto, tecido de alto desempenho com corte que define a silhueta com precisão. Para treinos de alta intensidade ou para o dia a dia, do treino à rua.',
     details: ['Edição limitada Coleção Onyx', 'Bandeau top + shorts', 'Tecido de alto desempenho', 'Corte que define a silhueta', 'Do treino à rua'],
   },
@@ -239,7 +239,7 @@ const MOCK_PRODUCTS_FALLBACK = [
     colors: ['#c8cebe', '#dde0d9', '#b4bda7'],
     bg: 'linear-gradient(145deg, #e3e5df, #d5d8d0, #cad0c0)',
     images: [],
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
+    sizes: ['P', 'M', 'G', 'GG'],
     description: 'Luxo em movimento. Superfície aveludada, compressão firme por dentro. Da aula de pilates ao jantar.',
     details: ['Tecido externo aveludado premium', 'Forro interno compressivo', 'Cintura alta de 12cm', 'Sem costura lateral', 'Lavagem à mão'],
   },
@@ -363,6 +363,45 @@ const cartItems    = document.getElementById('cart-items');
 const cartEmpty    = document.getElementById('cart-empty');
 const cartFooter   = document.getElementById('cart-footer');
 const productsGrid = document.getElementById('products-grid');
+
+// ══════════════════════
+// NAVEGAÇÃO DE CAMADAS (botão/gesto "voltar" do navegador)
+// ══════════════════════
+// Bug relatado: abrir um produto/checkout/carrinho não registrava nada no
+// histórico do navegador — no celular (inclusive dentro do navegador
+// embutido do WhatsApp), apertar "voltar" não fechava a camada aberta, ele
+// saía do site inteiro em vez de voltar pra vitrine. Cada abertura empilha
+// um estado extra no histórico; ao fechar pela UI (X, clique fora, botão
+// "Voltar para a loja") consome esse estado com history.back(), deixando o
+// botão físico de voltar do navegador com o mesmo efeito. `overlayNavDepth`
+// evita chamar back() mais vezes do que estados realmente empilhados.
+let overlayNavDepth = 0;
+
+function pushOverlayState() {
+  overlayNavDepth++;
+  history.pushState({ thymosOverlay: true }, '');
+}
+
+// Chamar apenas em fechamentos disparados pela própria UI (clique, tecla
+// Esc, etc.) — nunca a partir do listener de popstate abaixo, senão cada
+// "voltar" físico dispararia um history.back() extra (loop). Não decrementa
+// overlayNavDepth aqui: history.back() sempre dispara popstate (mesmo
+// quando chamado pelo próprio código), e é lá que a contagem é ajustada —
+// decrementar nos dois lugares descontaria a mesma navegação duas vezes.
+function popOverlayState() {
+  if (overlayNavDepth > 0) history.back();
+}
+
+window.addEventListener('popstate', () => {
+  if (overlayNavDepth > 0) overlayNavDepth--; // o navegador já consumiu este estado sozinho
+  // Fecha (silenciosamente, sem mexer no histórico de novo) qualquer
+  // camada que ainda esteja na tela — cobre produto, checkout, informações
+  // e carrinho, na ordem em que normalmente ficariam por cima uma da outra.
+  if (document.getElementById('product-modal')) closeModal(true);
+  if (document.getElementById('checkout-page')) closeCheckoutPage(true);
+  if (document.getElementById('info-modal')) closeInfoModal(true);
+  if (cartDrawer.classList.contains('open')) closeCart(true);
+});
 
 // ══════════════════════
 // NAVBAR
@@ -542,6 +581,7 @@ function openModal(productId) {
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => modal.classList.add('open'));
+  pushOverlayState();
 
   // Fechar
   modal.querySelector('#modal-overlay').addEventListener('click', closeModal);
@@ -572,7 +612,13 @@ function openModal(productId) {
       }
     }
     addToCart(p.id, this, qty);
-    setTimeout(closeModal, 900);
+    // fromHistory=true: addToCart() já abriu o carrinho por cima do modal
+    // (empilhando o próprio estado no histórico) — se este fechamento
+    // também chamasse popOverlayState(), o history.back() acabaria
+    // consumindo o estado do CARRINHO (o do topo), fechando-o junto por
+    // engano assim que ele abrisse. O estado do modal fica "por baixo",
+    // sem problema: só é consumido quando o carrinho for fechado depois.
+    setTimeout(() => closeModal(true), 900);
   });
 }
 
@@ -599,12 +645,13 @@ function switchGradient(index) {
 }
 window.switchGradient = switchGradient;
 
-function closeModal() {
+function closeModal(fromHistory) {
   const modal = document.getElementById('product-modal');
   if (!modal) return;
   modal.classList.remove('open');
   document.removeEventListener('keydown', handleEsc);
   setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
+  if (fromHistory !== true) popOverlayState();
 }
 function handleEsc(e) { if (e.key === 'Escape') closeModal(); }
 
@@ -628,7 +675,6 @@ const INFO_MODAL_CONTENT = {
             <th style="text-align:left;padding:8px 6px;color:var(--gray-300);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">Quadril</th>
           </tr></thead>
           <tbody>
-            <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">PP</td><td style="padding:8px 6px">78–82</td><td style="padding:8px 6px">60–64</td><td style="padding:8px 6px">86–90</td></tr>
             <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">P</td><td style="padding:8px 6px">83–87</td><td style="padding:8px 6px">65–69</td><td style="padding:8px 6px">91–95</td></tr>
             <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">M</td><td style="padding:8px 6px">88–93</td><td style="padding:8px 6px">70–75</td><td style="padding:8px 6px">96–101</td></tr>
             <tr style="border-bottom:1px solid var(--beige)"><td style="padding:8px 6px;font-weight:700">G</td><td style="padding:8px 6px">94–99</td><td style="padding:8px 6px">76–81</td><td style="padding:8px 6px">102–107</td></tr>
@@ -671,7 +717,7 @@ const INFO_MODAL_CONTENT = {
       <details class="modal-details" open><summary>1. Quem somos</summary>
         <p class="modal-desc" style="border:none;padding:6px 0 0">Esta loja é operada por <strong>THYMOS COMPANY LTDA</strong>, inscrita no CNPJ sob o nº <strong>68.874.570/0001-44</strong>, com sede na R. Manoel Bernardes, 1150, Itaipava, Itajaí/SC, CEP 88.316-400.</p></details>
       <details class="modal-details"><summary>2. Aceitação dos termos</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">O uso deste site implica concordância integral com estes Termos de Uso e com nossa <a href="#" onclick="closeInfoModal();openInfoModal('privacy');return false;" style="color:var(--nude);text-decoration:underline">Política de Privacidade</a>. Se você não concorda com algum ponto, pedimos que não utilize o site.</p></details>
+        <p class="modal-desc" style="border:none;padding:6px 0 0">O uso deste site implica concordância integral com estes Termos de Uso e com nossa <a href="#" onclick="openInfoModal('privacy');return false;" style="color:var(--nude);text-decoration:underline">Política de Privacidade</a>. Se você não concorda com algum ponto, pedimos que não utilize o site.</p></details>
       <details class="modal-details"><summary>3. Produtos e preços</summary>
         <p class="modal-desc" style="border:none;padding:6px 0 0">Fazemos o possível para manter fotos, descrições, preços e estoque atualizados, mas pequenas divergências podem ocorrer. Preços podem mudar sem aviso prévio, valendo sempre o valor exibido no momento da finalização do pedido.</p></details>
       <details class="modal-details"><summary>4. Pedidos e pagamento</summary>
@@ -735,6 +781,7 @@ function openInfoModal(kind) {
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => modal.classList.add('open'));
+  pushOverlayState();
 
   modal.querySelector('#info-modal-overlay').addEventListener('click', closeInfoModal);
   modal.querySelector('#info-modal-close').addEventListener('click', closeInfoModal);
@@ -742,12 +789,13 @@ function openInfoModal(kind) {
 }
 window.openInfoModal = openInfoModal;
 
-function closeInfoModal() {
+function closeInfoModal(fromHistory) {
   const modal = document.getElementById('info-modal');
   if (!modal) return;
   modal.classList.remove('open');
   document.removeEventListener('keydown', handleInfoEsc);
   setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 350);
+  if (fromHistory !== true) popOverlayState();
 }
 function handleInfoEsc(e) { if (e.key === 'Escape') closeInfoModal(); }
 
@@ -1133,8 +1181,14 @@ function updateCartUI() {
   });
 }
 
-function openCart()  { cartDrawer.classList.add('open'); cartOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeCart() { cartDrawer.classList.remove('open'); cartOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+function openCart()  {
+  cartDrawer.classList.add('open'); cartOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+  pushOverlayState();
+}
+function closeCart(fromHistory) {
+  cartDrawer.classList.remove('open'); cartOverlay.classList.remove('open'); document.body.style.overflow = '';
+  if (fromHistory !== true) popOverlayState();
+}
 
 cartBtn.addEventListener('click', openCart);
 cartClose.addEventListener('click', closeCart);
@@ -1249,7 +1303,12 @@ function renderCartSummaryHTML() {
 
 function openCheckoutPage() {
   document.getElementById('checkout-page')?.remove();
-  closeCart();
+  // fromHistory=true: fecha o carrinho sem consumir o histórico agora — o
+  // pushOverlayState() do checkout logo abaixo já empilha o estado
+  // seguinte; chamar popOverlayState() aqui também correria com esse
+  // pushState (history.back() é assíncrono) e deixaria o histórico
+  // inconsistente.
+  closeCart(true);
 
   const page = document.createElement('div');
   page.id = 'checkout-page';
@@ -1275,6 +1334,7 @@ function openCheckoutPage() {
   document.body.appendChild(page);
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => page.classList.add('open'));
+  pushOverlayState();
 
   page.querySelector('#cp-close').addEventListener('click', closeCheckoutPage);
 
@@ -1285,13 +1345,14 @@ function openCheckoutPage() {
   setCheckoutStep(1);
 }
 
-function closeCheckoutPage() {
+function closeCheckoutPage(fromHistory) {
   clearInterval(pixPollTimer);
   clearInterval(pixCountdownTimer);
   const page = document.getElementById('checkout-page');
   if (!page) return;
   page.classList.remove('open');
   setTimeout(() => { page.remove(); document.body.style.overflow = ''; }, 300);
+  if (fromHistory !== true) popOverlayState();
 }
 
 function setCheckoutStep(n) {
