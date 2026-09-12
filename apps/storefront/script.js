@@ -1266,6 +1266,11 @@ function updateCartUI() {
   if (cart.length === 0) {
     cartEmpty.style.display = 'flex';
     cartFooter.style.display = 'none';
+    // .is-empty faz #cart-items esticar (ver style.css) só nesse estado —
+    // é o que permite o "carrinho vazio" ficar centralizado ocupando a
+    // gaveta inteira. Com itens, a lista some com a classe pra não esticar
+    // e deixar um vão vazio enorme entre 1-2 produtos e o rodapé.
+    cartItems.classList.add('is-empty');
     cartItems.innerHTML = '';
     cartItems.appendChild(cartEmpty);
     return;
@@ -1273,6 +1278,7 @@ function updateCartUI() {
 
   cartEmpty.style.display = 'none';
   cartFooter.style.display = 'block';
+  cartItems.classList.remove('is-empty');
 
   // Valores
   document.getElementById('cart-subtotal').textContent = `R$${subtotal.toLocaleString('pt-BR')}`;
