@@ -1051,6 +1051,62 @@ function initCommunityDots() {
   updateDots();
 }
 
+// ══════════════════════
+// CARROSSEL DE SELOS (#cert-grid — "Tecnologia Sustentável")
+// ══════════════════════
+// Mesmo padrão dos dois carrosséis acima, pro conjunto fixo dos 4 selos de
+// certificação (antes um grid 2x2 apertado — ver PR da seção Comunidade).
+function initCertCarousel() {
+  const track = document.getElementById('cert-grid');
+  const prevBtn = document.getElementById('cert-car-prev');
+  const nextBtn = document.getElementById('cert-car-next');
+  if (!track || !prevBtn || !nextBtn) return;
+
+  const scrollByPage = dir => {
+    track.scrollBy({ left: dir * track.clientWidth * 0.9, behavior: 'smooth' });
+  };
+  prevBtn.addEventListener('click', () => scrollByPage(-1));
+  nextBtn.addEventListener('click', () => scrollByPage(1));
+
+  const updateArrows = () => {
+    const maxScroll = track.scrollWidth - track.clientWidth - 2;
+    prevBtn.disabled = track.scrollLeft <= 0;
+    nextBtn.disabled = maxScroll <= 0 || track.scrollLeft >= maxScroll;
+    prevBtn.style.opacity = prevBtn.disabled ? '.35' : '1';
+    nextBtn.style.opacity = nextBtn.disabled ? '.35' : '1';
+  };
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  window.addEventListener('resize', updateArrows);
+  updateArrows();
+}
+
+function initCertDots() {
+  const dotsWrap = document.getElementById('cert-dots');
+  const track = document.getElementById('cert-grid');
+  if (!dotsWrap || !track) return;
+  const items = Array.from(track.children);
+  if (items.length === 0) return;
+
+  dotsWrap.innerHTML = '';
+  items.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'prod-dot' + (i === 0 ? ' active' : '');
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  const updateDots = () => {
+    const item = track.querySelector('.cert-card');
+    if (!item) return;
+    const step = item.getBoundingClientRect().width + 18; // mesmo gap do .prod-grid
+    const idx = Math.min(dots.length - 1, Math.round(track.scrollLeft / step));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  };
+  track.addEventListener('scroll', updateDots, { passive: true });
+  window.addEventListener('resize', updateDots);
+  updateDots();
+}
+
 // Toca/pausa cada <video> do carrossel de comunidade só enquanto ele está
 // visível na tela — evita rodar 3 vídeos ao mesmo tempo fora da vitrine
 // (gasto de dados/bateria à toa, especialmente no mobile). Mudo e em loop,
@@ -1739,6 +1795,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCommunityCarousel();
   initCommunityDots();
   initCommunityVideos();
+  initCertCarousel();
+  initCertDots();
   renderCollectionsShowcase();
   initReveal();
   initCursorGlow();
