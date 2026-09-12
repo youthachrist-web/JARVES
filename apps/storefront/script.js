@@ -1107,24 +1107,15 @@ function initCertDots() {
   updateDots();
 }
 
-// Toca/pausa cada <video> do carrossel de comunidade só enquanto ele está
-// visível na tela — evita rodar 3 vídeos ao mesmo tempo fora da vitrine
-// (gasto de dados/bateria à toa, especialmente no mobile). Mudo e em loop,
-// então tocar automaticamente é permitido pelos navegadores sem interação.
+// Toca os 3 vídeos do carrossel de comunidade sempre, desde o carregamento
+// da página, mesmo os que começam fora da tela — pedido explícito pra não
+// depender do usuário rolar até eles. Mudos e em loop, então tocar
+// automaticamente é permitido pelos navegadores sem interação do usuário.
 function initCommunityVideos() {
   const videos = document.querySelectorAll('.community-video');
-  if (videos.length === 0) return;
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      const video = entry.target;
-      if (entry.isIntersecting) {
-        video.play().catch(() => { /* autoplay bloqueado — sem problema, o poster continua visível */ });
-      } else {
-        video.pause();
-      }
-    });
-  }, { threshold: .35 });
-  videos.forEach(v => io.observe(v));
+  videos.forEach(v => {
+    v.play().catch(() => { /* autoplay bloqueado — sem problema, o poster continua visível */ });
+  });
 }
 
 // "Nudge": um pequeno vai-e-volta automático a primeira vez que o
