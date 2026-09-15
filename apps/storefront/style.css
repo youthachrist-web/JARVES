@@ -405,7 +405,7 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 /* ════════════════════════════════
    TRÊS IMAGENS — GALERIA ESTILO ALO
 ════════════════════════════════ */
-.trio-gallery{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:14px;padding:0 48px 88px;max-width:1440px;margin:0 auto}
+.trio-gallery{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 48px 88px;max-width:1200px;margin:0 auto}
 .trio-item{position:relative;overflow:hidden;border-radius:4px;cursor:pointer}
 .trio-item:nth-child(2){margin-top:-32px}
 .trio-photo{width:100%;aspect-ratio:3/4;overflow:hidden}
@@ -854,7 +854,6 @@ details.modal-details summary:hover{color:var(--nude)}
   .split.flip{direction:ltr}
   .split-photo-ph,.split-photo{min-height:380px}
   .trio-gallery{grid-template-columns:1fr 1fr;gap:10px}
-  .trio-item:nth-child(3){display:none}
   /* Popup de boas-vindas: antes escondia a foto no mobile e mostrava só o
      texto — agora empilha foto (banner) + conteúdo, igual à imagem que já
      aparece no desktop, com o box rolável caso não caiba na tela. */
