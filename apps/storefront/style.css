@@ -783,6 +783,15 @@ details.modal-details summary:hover{color:var(--nude)}
 .msi-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--gray-600);font-weight:300;white-space:nowrap}
 
 /* ════════════════════════════════
+   FAQ (estático, crawlable)
+════════════════════════════════ */
+.faq-section{max-width:760px;margin:0 auto;padding:88px 48px}
+.faq-h2{font-family:var(--font-display);font-size:clamp(1.8rem,3.4vw,2.6rem);letter-spacing:.04em;text-transform:uppercase;color:var(--black);text-align:center;margin-bottom:32px}
+.faq-list details.modal-details{border-bottom:1px solid var(--beige)}
+.faq-list details.modal-details summary{font-size:.82rem;letter-spacing:.02em;text-transform:none;padding:16px 0}
+.faq-list details.modal-details p.modal-desc{padding-bottom:14px !important;font-size:.85rem;color:var(--gray-600)}
+
+/* ════════════════════════════════
    SOBRE / BRAND MESSAGE
 ════════════════════════════════ */
 .brand-msg{background:var(--cream);padding:96px 48px;border-top:1px solid var(--beige);border-bottom:1px solid var(--beige)}
@@ -891,6 +900,7 @@ details.modal-details summary:hover{color:var(--nude)}
   .prod-dot{width:6px;height:6px;border-radius:50%;background:var(--beige);transition:all .25s var(--ease)}
   .prod-dot.active{width:18px;border-radius:3px;background:var(--nude-dark)}
   .brand-msg{padding:72px 20px}
+  .faq-section{padding:64px 20px}
   .brand-story{padding:56px 20px}
   .story-grid{grid-template-columns:1fr}
   .cert-card{flex-basis:82vw;max-width:340px;padding:16px}

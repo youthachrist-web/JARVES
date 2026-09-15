@@ -4,9 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Thymos — Activewear Premium Brasileiro</title>
-  <meta name="description" content="Thymos: activewear premium e tecnologia sustentável para quem faz da performance seu dia a dia — no esporte, no trabalho e na vida. Frete grátis acima de R$299."/>
-  <link rel="canonical" href="https://www.thymos.com.br/"/>
-  <meta name="robots" content="index, follow"/>
+  <meta name="description" content="Thymos: activewear premium e tecnologia sustentável para quem faz da performance seu dia a dia — no esporte, no trabalho e na vida. Leggings, tops, camisetas e shorts fitness feitos no Brasil. Frete grátis acima de R$299."/>
+  <link rel="canonical" href="https://thymoswear.com.br/"/>
+  <meta name="robots" content="index, follow, max-image-preview:large"/>
   <meta name="theme-color" content="#324d3e"/>
 
   <!-- Ícone da aba do navegador -->
@@ -19,15 +19,15 @@
   <meta property="og:site_name" content="Thymos"/>
   <meta property="og:title" content="Thymos — Activewear Premium Brasileiro"/>
   <meta property="og:description" content="Para quem faz da performance seu dia a dia. Activewear premium e tecnologia sustentável, feita no Brasil."/>
-  <meta property="og:image" content="assets/products/conjunto-sculpt-graphite.jpeg"/>
+  <meta property="og:image" content="https://thymoswear.com.br/assets/products/conjunto-sculpt-graphite.jpeg"/>
   <meta property="og:locale" content="pt_BR"/>
-  <meta property="og:url" content="https://www.thymos.com.br/"/>
+  <meta property="og:url" content="https://thymoswear.com.br/"/>
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="Thymos — Activewear Premium Brasileiro"/>
   <meta name="twitter:description" content="Para quem faz da performance seu dia a dia."/>
-  <meta name="twitter:image" content="assets/products/conjunto-sculpt-graphite.jpeg"/>
+  <meta name="twitter:image" content="https://thymoswear.com.br/assets/products/conjunto-sculpt-graphite.jpeg"/>
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -40,14 +40,26 @@
   {
     "@context": "https://schema.org",
     "@type": "ClothingStore",
+    "@id": "https://thymoswear.com.br/#organization",
     "name": "Thymos",
     "legalName": "Thymos Company Ltda",
     "taxID": "68.874.570/0001-44",
-    "description": "Activewear premium e tecnologia sustentável, feita no Brasil desde 2019.",
-    "url": "https://www.thymos.com.br/",
-    "logo": "https://www.thymos.com.br/assets/thymos-logo.png",
+    "description": "Activewear premium e tecnologia sustentável, feita no Brasil desde 2019. Leggings, tops, camisetas oversized e shorts fitness nos tamanhos P, M, G e GG.",
+    "slogan": "Feito para performance todo dia.",
+    "url": "https://thymoswear.com.br/",
+    "logo": "https://thymoswear.com.br/assets/favicon-512.png",
+    "image": "https://thymoswear.com.br/assets/products/conjunto-sculpt-graphite.jpeg",
+    "priceRange": "R$100-R$600",
+    "currenciesAccepted": "BRL",
+    "paymentAccepted": "Pix, Cartão de Crédito, Boleto",
     "sameAs": ["https://www.instagram.com/thymosoficial", "https://www.tiktok.com/@thymosoficial", "https://www.youtube.com/@Thymosoficial"],
     "areaServed": "BR",
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    },
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "R. Manoel Bernardes, 1150, Itaipava",
@@ -56,6 +68,53 @@
       "postalCode": "88316-400",
       "addressCountry": "BR"
     }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Thymos",
+    "url": "https://thymoswear.com.br/",
+    "publisher": { "@id": "https://thymoswear.com.br/#organization" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Quais as formas de pagamento aceitas pela Thymos?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Pix, cartão de crédito (em até 3x sem juros) e boleto bancário." }
+      },
+      {
+        "@type": "Question",
+        "name": "Qual o prazo de entrega dos produtos Thymos?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Normalmente entre 3 e 10 dias úteis, conforme a região, contados a partir da confirmação do pagamento." }
+      },
+      {
+        "@type": "Question",
+        "name": "Como funciona a troca de produtos na Thymos?",
+        "acceptedAnswer": { "@type": "Answer", "text": "A troca é gratuita em até 30 dias corridos após o recebimento, para peças sem uso, com etiqueta e nota fiscal." }
+      },
+      {
+        "@type": "Question",
+        "name": "A Thymos tem frete grátis?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim, frete grátis em compras acima de R$299 para todo o Brasil." }
+      },
+      {
+        "@type": "Question",
+        "name": "Como acompanho meu pedido na Thymos?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Assim que o pagamento é confirmado, enviamos o código de rastreio por e-mail e WhatsApp." }
+      },
+      {
+        "@type": "Question",
+        "name": "Quais tamanhos a Thymos vende?",
+        "acceptedAnswer": { "@type": "Answer", "text": "As peças Thymos são vendidas nos tamanhos P, M, G e GG." }
+      }
+    ]
   }
   </script>
 </head>
@@ -646,6 +705,30 @@
   </div>
 </aside>
 
+<!-- ═══════════════════════════════════════════
+  FAQ — estático no HTML (não só dentro do modal via JS) para ser
+  indexável por buscadores e mecanismos de IA que não executam JS.
+  Mantenha o texto sincronizado com INFO_MODAL_CONTENT.faq em script.js
+  e com o FAQPage JSON-LD no <head>.
+═══════════════════════════════════════════ -->
+<section class="faq-section" id="faq">
+  <h2 class="faq-h2">Perguntas Frequentes</h2>
+  <div class="faq-list">
+    <details class="modal-details" open><summary>Quais as formas de pagamento?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">Pix, cartão de crédito (em até 3x sem juros) e boleto bancário.</p></details>
+    <details class="modal-details"><summary>Qual o prazo de entrega?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">Normalmente entre 3 e 10 dias úteis, conforme a região, contados a partir da confirmação do pagamento.</p></details>
+    <details class="modal-details"><summary>Como funciona a troca?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">Gratuita em até 30 dias corridos após o recebimento, para peças sem uso, com etiqueta e nota fiscal.</p></details>
+    <details class="modal-details"><summary>Tem frete grátis?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">Sim, em compras acima de R$299 para todo o Brasil.</p></details>
+    <details class="modal-details"><summary>Como acompanho meu pedido?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">Assim que o pagamento é confirmado, enviamos o código de rastreio por e-mail e WhatsApp.</p></details>
+    <details class="modal-details"><summary>Quais tamanhos a Thymos vende?</summary>
+      <p class="modal-desc" style="border:none;padding:6px 0 0">As peças Thymos são vendidas nos tamanhos P, M, G e GG.</p></details>
+  </div>
+</section>
+
 <!-- RODAPÉ -->
 <footer class="footer" id="footer">
   <div class="footer-top">
@@ -677,7 +760,7 @@
            de simular uma categoria que não existe de verdade. -->
       <div class="f-col"><h4>Loja</h4><ul><li><a href="#products">Leggings</a></li><li><a href="#products">Top Esportivo</a></li><li><a href="#products">Camisetas Oversized</a></li><li><a href="#products">Shorts</a></li></ul></div>
       <div class="f-col"><h4>Informações</h4><ul><li><a href="#about">Sobre Nós</a></li><li><a href="#" onclick="openInfoModal('sizes');return false;">Guia de Tamanhos</a></li><li><a href="#brand-story">Sustentabilidade</a></li><li><a href="mailto:contato@thymosfit.com.br?subject=Programa%20de%20Embaixadoras">Embaixadoras</a></li><li><a href="https://www.instagram.com/thymosoficial" target="_blank" rel="noopener noreferrer">Blog</a></li></ul></div>
-      <div class="f-col"><h4>Atendimento</h4><ul><li><a href="#" onclick="openInfoModal('faq');return false;">Perguntas Frequentes</a></li><li><a href="#" onclick="openInfoModal('shipping');return false;">Frete e Trocas</a></li><li><a href="#" onclick="openInfoModal('tracking');return false;">Rastrear Pedido</a></li><li><a href="mailto:contato@thymosfit.com.br">Fale Conosco</a></li><li><a href="#" onclick="openInfoModal('terms');return false;">Termos de Uso</a></li><li><a href="#" onclick="openInfoModal('privacy');return false;">Privacidade</a></li></ul></div>
+      <div class="f-col"><h4>Atendimento</h4><ul><li><a href="#faq">Perguntas Frequentes</a></li><li><a href="#" onclick="openInfoModal('shipping');return false;">Frete e Trocas</a></li><li><a href="#" onclick="openInfoModal('tracking');return false;">Rastrear Pedido</a></li><li><a href="mailto:contato@thymosfit.com.br">Fale Conosco</a></li><li><a href="#" onclick="openInfoModal('terms');return false;">Termos de Uso</a></li><li><a href="#" onclick="openInfoModal('privacy');return false;">Privacidade</a></li></ul></div>
     </div>
     <div class="f-news">
       <h4>Fique por dentro</h4>

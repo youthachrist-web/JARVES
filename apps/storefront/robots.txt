@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.thymos.com.br/sitemap.xml
+Sitemap: https://thymoswear.com.br/sitemap.xml
