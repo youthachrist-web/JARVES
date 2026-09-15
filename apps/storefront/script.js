@@ -701,20 +701,6 @@ const INFO_MODAL_CONTENT = {
         </table>
       </div>`,
   },
-  faq: {
-    title: 'Perguntas Frequentes',
-    body: `
-      <details class="modal-details" open><summary>Quais as formas de pagamento?</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">Pix, cartão de crédito (em até 3x sem juros) e boleto bancário.</p></details>
-      <details class="modal-details"><summary>Qual o prazo de entrega?</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">Normalmente entre 3 e 10 dias úteis, conforme a região, contados a partir da confirmação do pagamento.</p></details>
-      <details class="modal-details"><summary>Como funciona a troca?</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">Gratuita em até 30 dias corridos após o recebimento, para peças sem uso, com etiqueta e nota fiscal.</p></details>
-      <details class="modal-details"><summary>Tem frete grátis?</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">Sim, em compras acima de R$${FREE_SHIPPING} para todo o Brasil.</p></details>
-      <details class="modal-details"><summary>Como acompanho meu pedido?</summary>
-        <p class="modal-desc" style="border:none;padding:6px 0 0">Assim que o pagamento é confirmado, enviamos o código de rastreio por e-mail e WhatsApp.</p></details>`,
-  },
   shipping: {
     title: 'Frete e Trocas',
     body: `

@@ -1,0 +1,23 @@
+# Thymos
+
+> Thymos é uma marca brasileira de activewear premium (roupa fitness) fundada em 2019, com sede em Itajaí, Santa Catarina. Produz leggings, tops esportivos, camisetas oversized e shorts, com foco em tecidos de tecnologia sustentável, para quem usa a mesma peça no treino, no trabalho e no dia a dia.
+
+## Dados da empresa
+
+- Razão social: Thymos Company Ltda (CNPJ 68.874.570/0001-44)
+- Endereço: R. Manoel Bernardes, 1150, Itaipava, Itajaí/SC, CEP 88316-400, Brasil
+- Site oficial: https://thymoswear.com.br/
+- Categorias de produto: leggings, tops esportivos, camisetas oversized, shorts fitness
+- Tamanhos disponíveis: P, M, G, GG
+- Envio: frete grátis em compras acima de R$299 para todo o Brasil; entrega em 3 a 10 dias úteis
+- Trocas: gratuitas em até 30 dias corridos após o recebimento
+- Pagamento: Pix, cartão de crédito (até 3x sem juros) e boleto bancário
+- Redes sociais oficiais: https://www.instagram.com/thymosoficial, https://www.tiktok.com/@thymosoficial, https://www.youtube.com/@Thymosoficial
+- Contato: contato@thymosfit.com.br
+
+## Páginas
+
+- [Loja](https://thymoswear.com.br/#products): catálogo de produtos Thymos
+- [Coleção](https://thymoswear.com.br/#collection): coleção em destaque
+- [Sobre / Sustentabilidade](https://thymoswear.com.br/#about): filosofia da marca e tecnologia sustentável dos tecidos
+- [Perguntas Frequentes](https://thymoswear.com.br/#faq): pagamento, frete, trocas, rastreio e tamanhos
