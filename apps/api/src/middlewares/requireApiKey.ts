@@ -1,4 +1,18 @@
 import type { Request, Response, NextFunction } from 'express'
+import { timingSafeEqual } from 'node:crypto'
+
+/**
+ * Compara em tempo constante — evita que um atacante infira a chave certa
+ * caractere a caractere medindo a latência de `!==` (que retorna assim que
+ * encontra a primeira diferença). Mesma técnica já usada para validar a
+ * assinatura HMAC dos webhooks (ver routes/webhooks.ts).
+ */
+function safeEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a)
+  const bBuf = Buffer.from(b)
+  if (aBuf.length !== bBuf.length) return false
+  return timingSafeEqual(aBuf, bBuf)
+}
 
 /**
  * Protege endpoints administrativos sensíveis (ex.: disparo manual de
@@ -22,7 +36,7 @@ export function requireApiKey(expectedKey: string | null) {
       return
     }
     const provided = req.header('x-admin-api-key')
-    if (provided !== expectedKey) {
+    if (!provided || !safeEqual(provided, expectedKey)) {
       res.status(401).json({ error: 'Não autorizado' })
       return
     }

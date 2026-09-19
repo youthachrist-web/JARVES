@@ -85,6 +85,18 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   const abacatePayClient = createAbacatePayClient(config.abacatePayApiKey)
 
   app.disable('x-powered-by')
+  // Headers de segurança de baixo risco, aplicados a toda resposta.
+  // Deliberadamente NÃO define X-Frame-Options/CSP frame-ancestors aqui: a
+  // rota de app incorporado (routes/nuvemshop.ts) precisa ser carregável
+  // dentro do iframe do admin da Nuvemshop, em outra origem — um DENY/
+  // SAMEORIGIN global quebraria essa integração.
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    next()
+  })
   // Necessário para que req.protocol reflita `https` corretamente atrás do
   // proxy do Railway (a conexão interna ao container é HTTP puro; sem isso,
   // req.protocol sempre reportaria "http" mesmo em produção) — usado ao

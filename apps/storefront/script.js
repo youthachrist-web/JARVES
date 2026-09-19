@@ -3,6 +3,15 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
+// Escapa texto antes de interpolar em innerHTML — nome/categoria/descrição
+// de produto vêm do catálogo (Supabase, editado pelo painel admin), não do
+// visitante, mas nunca são confiáveis como HTML puro: um valor cadastrado
+// errado (ou uma sessão de admin comprometida) não deve virar XSS pra todo
+// mundo que visitar a loja.
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // Ícones inline (sem emoji) reaproveitados em várias strings de HTML
 // geradas dinamicamente — mesmo estilo das svgs estáticas do index.html
 // (stroke-based, currentColor).
@@ -447,7 +456,7 @@ function openModal(productId) {
 
   // Galeria principal
   const mainImgHtml = hasImages
-    ? `<img src="${p.images[0]}" alt="${p.name}" id="modal-main-img" />`
+    ? `<img src="${escapeHtml(p.images[0])}" alt="${escapeHtml(p.name)}" id="modal-main-img" />`
     : `<div class="gallery-ph" id="modal-main-img" style="background:${p.bg}">
          <svg viewBox="0 0 400 530" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5">
            <defs><radialGradient id="mgr${p.id}" cx="50%" cy="35%" r="55%">
@@ -507,8 +516,8 @@ function openModal(productId) {
 
         <!-- ── INFORMAÇÕES ── -->
         <div class="modal-info">
-          <div class="modal-cat">${p.category}</div>
-          <h2 class="modal-name">${p.name}</h2>
+          <div class="modal-cat">${escapeHtml(p.category)}</div>
+          <h2 class="modal-name">${escapeHtml(p.name)}</h2>
 
           <div class="modal-price-row">
             <span class="modal-price">R$${p.price}</span>
@@ -521,7 +530,7 @@ function openModal(productId) {
 
           ${stockBadge}
 
-          <p class="modal-desc">${p.description}</p>
+          <p class="modal-desc">${escapeHtml(p.description)}</p>
 
           ${p.colors.length > 0 ? `
           <div class="modal-sec">
@@ -857,7 +866,7 @@ function createProductCard(p, delay = 0) {
   </svg>`;
 
   const imgHtml = hasImg
-    ? `<img src="${p.images[0]}" alt="${p.name}" />`
+    ? `<img src="${escapeHtml(p.images[0])}" alt="${escapeHtml(p.name)}" />`
     : `<div class="prod-img-bg" style="background:${p.bg};position:relative">${svgBg}</div>`;
 
   card.innerHTML = `
@@ -871,8 +880,8 @@ function createProductCard(p, delay = 0) {
       </div>
     </div>
     <div class="prod-info" data-id="${p.id}" style="cursor:pointer">
-      <div class="prod-cat">${p.category}</div>
-      <div class="prod-name">${p.name}</div>
+      <div class="prod-cat">${escapeHtml(p.category)}</div>
+      <div class="prod-name">${escapeHtml(p.name)}</div>
       <div class="prod-bottom">
         <div>
           <span class="prod-price">R$${p.price}</span>
@@ -927,14 +936,14 @@ function renderCollectionsShowcase() {
 
     const hasImg = p.images && p.images.length > 0;
     const imgHtml = hasImg
-      ? `<img src="${p.images[0]}" alt="${p.name}" loading="lazy" decoding="async"/>`
+      ? `<img src="${escapeHtml(p.images[0])}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async"/>`
       : `<div class="show-img-fill"></div>`;
     const oldPriceHtml = p.oldPrice ? `<span class="show-old">R$${p.oldPrice}</span>` : '';
 
     item.innerHTML = `
       <div class="show-img">${imgHtml}</div>
-      <div class="show-cat">${p.category}</div>
-      <div class="show-name">${p.name}</div>
+      <div class="show-cat">${escapeHtml(p.category)}</div>
+      <div class="show-name">${escapeHtml(p.name)}</div>
       <div class="show-price">R$${p.price}${oldPriceHtml}</div>`;
     item.addEventListener('click', () => openModal(p.id));
     showcase.appendChild(item);
@@ -1294,12 +1303,12 @@ function updateCartUI() {
     el.innerHTML = `
       <div class="ci-img" style="position:relative;${hasImg ? '' : `background:${item.bg};`}">
         ${hasImg
-          ? `<img src="${item.images[0]}" alt="${item.name}"/>`
+          ? `<img src="${escapeHtml(item.images[0])}" alt="${escapeHtml(item.name)}"/>`
           : `<div style="position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 50% 30%,rgba(114,138,110,0.18) 0%,transparent 70%)"></div>`}
       </div>
       <div class="ci-info">
-        <div class="ci-name">${item.name}</div>
-        <div class="ci-cat">${item.category}</div>
+        <div class="ci-name">${escapeHtml(item.name)}</div>
+        <div class="ci-cat">${escapeHtml(item.category)}</div>
         <div class="ci-controls">
           <div class="qty-wrap">
             <button class="qty-btn" data-action="dec" data-id="${item.id}">−</button>
@@ -1422,10 +1431,10 @@ function renderCartSummaryHTML() {
     <div class="cp-summary-items">
       ${cart.map(item => `
         <div class="cp-summary-item">
-          <div class="cp-si-img">${item.images?.length ? `<img src="${item.images[0]}" alt="${item.name}"/>` : ''}<span class="cp-si-qty">${item.qty}</span></div>
+          <div class="cp-si-img">${item.images?.length ? `<img src="${escapeHtml(item.images[0])}" alt="${escapeHtml(item.name)}"/>` : ''}<span class="cp-si-qty">${item.qty}</span></div>
           <div class="cp-si-info">
-            <div class="cp-si-name">${item.name}</div>
-            <div class="cp-si-cat">${item.category}</div>
+            <div class="cp-si-name">${escapeHtml(item.name)}</div>
+            <div class="cp-si-cat">${escapeHtml(item.category)}</div>
           </div>
           <div class="cp-si-price">${formatBRL(item.price * item.qty)}</div>
         </div>`).join('')}
