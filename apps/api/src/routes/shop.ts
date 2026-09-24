@@ -214,6 +214,7 @@ export function shopRouter({
     // registrado, pra nunca cobrar um total sem frete por engano.
     let shippingCost = 0
     let shippingLabel: string | null = null
+    let shippingCepNormalized: string | null = null
     if (subtotalAfterDiscount < freeShippingThreshold) {
       const destinationCep = typeof shippingCep === 'string' ? shippingCep.replace(/\D/g, '') : ''
       const serviceId = Number(shippingServiceId)
@@ -239,6 +240,7 @@ export function shopRouter({
         }
         shippingCost = chosen.price
         shippingLabel = `${chosen.company} ${chosen.name}`
+        shippingCepNormalized = destinationCep
       } catch (err) {
         logger.error('Falha ao recalcular frete no fechamento do pedido', { message: (err as Error).message })
         res.status(503).json({ error: 'Não foi possível confirmar o frete agora. Tente novamente em instantes.' })
@@ -260,6 +262,9 @@ export function shopRouter({
         discount,
         total,
         couponCode: appliedCoupon,
+        shippingCost,
+        shippingLabel,
+        shippingCep: shippingCepNormalized,
       })
       orderId = created.id
     } catch (err) {
