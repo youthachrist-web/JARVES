@@ -21,6 +21,14 @@ export interface NewOrder {
   total: number
   /** Código do cupom aplicado (já normalizado), ou null se nenhum. */
   couponCode: string | null
+  /** Valor do frete recotado no servidor (ver routes/shop.ts) — 0 quando o
+   * pedido bateu o frete grátis. */
+  shippingCost: number
+  /** Ex.: "Correios PAC" — null quando o pedido bateu o frete grátis. */
+  shippingLabel: string | null
+  /** CEP de destino (só dígitos) usado na cotação — null quando o pedido
+   * bateu o frete grátis (não foi preciso cotar). */
+  shippingCep: string | null
 }
 
 export interface PaymentInfo {
@@ -92,6 +100,9 @@ export class SupabaseOrdersStore implements OrdersStore {
         cupom: order.couponCode,
         desconto: order.discount,
         total: order.total,
+        frete_valor: order.shippingCost,
+        frete_cep: order.shippingCep,
+        frete_transportadora: order.shippingLabel,
         pagamento_status: 'pendente',
       }),
     })
