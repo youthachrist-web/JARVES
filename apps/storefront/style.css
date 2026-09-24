@@ -643,6 +643,14 @@ h2 em{font-family:var(--font-serif);font-style:italic;font-weight:300;color:var(
 .cp-field input:focus{border-color:var(--nude)}
 .cp-field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .cp-field-err{font-size:.68rem;font-weight:600;color:#b8453a;min-height:16px}
+.cp-shipping-options{display:flex;flex-direction:column;gap:8px}
+.cp-shipping-loading,.cp-shipping-err{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--gray-400);padding:4px 0}
+.cp-shipping-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--white);border:1.5px solid var(--beige);border-radius:var(--r);cursor:pointer;transition:border-color .2s}
+.cp-shipping-opt.selected{border-color:var(--nude)}
+.cp-shipping-opt input{margin:0;accent-color:var(--nude)}
+.cp-so-name{font-size:.76rem;font-weight:600;color:var(--gray-700);text-transform:none;letter-spacing:normal;flex:1}
+.cp-so-time{font-size:.66rem;color:var(--gray-300);text-transform:none;letter-spacing:normal}
+.cp-so-price{font-size:.78rem;font-weight:700;color:var(--black)}
 .cp-continue-btn{padding:15px;background:var(--black);color:#fff;font-family:var(--font-body);font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:var(--r);cursor:pointer;transition:all .3s var(--ease);margin-top:4px}
 .cp-continue-btn:hover{background:var(--nude-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(20,26,22,.18)}
 .cp-back-btn{background:none;border:none;color:var(--gray-400);font-size:.66rem;font-weight:700;letter-spacing:.05em;cursor:pointer;padding:16px 0 0;text-align:center;width:100%}

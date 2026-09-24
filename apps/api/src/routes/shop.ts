@@ -4,6 +4,9 @@ import type { OrdersStore, OrderItem } from '../store/ordersStore.js'
 import type { EventLogStore } from '../store/eventLogStore.js'
 import type { Mailer } from '../lib/mailer.js'
 import type { AbacatePayClient } from '../lib/abacatepay.js'
+import type { MelhorEnvioClient } from '../lib/melhorEnvio.js'
+import { isValidRequestedItem, type RequestedItem } from '../lib/orderItems.js'
+import { resolveShippingPackages } from './shipping.js'
 import { logger } from '../logger.js'
 
 export interface ShopRouterDeps {
@@ -23,6 +26,13 @@ export interface ShopRouterDeps {
    * homologar cartão para a conta; enquanto isso GET /payment-methods
    * anuncia `card: false` e POST /orders recusa `paymentMethod: "card"`. */
   cardEnabled: boolean
+  /** null quando MELHOR_ENVIO_TOKEN não está configurada — ver
+   * routes/shipping.ts. Abaixo do limite de frete grátis, POST /orders
+   * exige frete calculado (não deixa o pedido passar sem cobrar frete). */
+  melhorEnvioClient: MelhorEnvioClient | null
+  storeOriginCep: string | null
+  freeShippingThreshold: number
+  melhorEnvioDefaultPackage: { widthCm: number; heightCm: number; lengthCm: number; weightKg: number }
 }
 
 /**
@@ -35,15 +45,6 @@ export interface ShopRouterDeps {
  */
 const COUPONS: Record<string, number> = {
   THYMOS10: 0.1,
-}
-
-interface RequestedItem {
-  productId: number
-  qty: number
-}
-
-function isValidRequestedItem(x: unknown): x is RequestedItem {
-  return !!x && typeof x === 'object' && typeof (x as RequestedItem).productId === 'number' && Number.isInteger((x as RequestedItem).qty) && (x as RequestedItem).qty > 0
 }
 
 /**
@@ -79,7 +80,19 @@ function isValidCPF(raw: string): boolean {
  * há dado sensível sendo exposto aqui (catálogo público + intake de pedido,
  * sem autenticação de admin envolvida de qualquer forma).
  */
-export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abacatePayClient, storefrontUrl, cardEnabled }: ShopRouterDeps): Router {
+export function shopRouter({
+  productsStore,
+  ordersStore,
+  eventLog,
+  mailer,
+  abacatePayClient,
+  storefrontUrl,
+  cardEnabled,
+  melhorEnvioClient,
+  storeOriginCep,
+  freeShippingThreshold,
+  melhorEnvioDefaultPackage,
+}: ShopRouterDeps): Router {
   const router = Router()
 
   function allowAnyOrigin(res: import('express').Response) {
@@ -132,7 +145,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       return
     }
 
-    const { customerName, customerEmail, customerPhone, customerTaxId, items, couponCode, paymentMethod } = req.body ?? {}
+    const { customerName, customerEmail, customerPhone, customerTaxId, items, couponCode, paymentMethod, shippingCep, shippingServiceId } = req.body ?? {}
 
     if (!customerName || !customerEmail || !customerTaxId || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Campos obrigatórios: customerName, customerEmail, customerTaxId (CPF), items (lista não vazia).' })
@@ -191,7 +204,49 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
     const discountRate = COUPONS[normalizedCoupon] ?? 0
     const appliedCoupon = discountRate > 0 ? normalizedCoupon : null
     const discount = Math.round(subtotal * discountRate)
-    const total = subtotal - discount
+    const subtotalAfterDiscount = subtotal - discount
+
+    // Frete: nunca confia no preço que o cliente manda (se mandasse). O
+    // cliente só escolhe QUAL transportadora (shippingServiceId, devolvido
+    // por GET /shipping/quote) — o preço real é sempre recotado aqui na hora
+    // de fechar o pedido, igual ao cupom acima. Abaixo do limite de frete
+    // grátis, frete é obrigatório: sem ele o pedido nem chega a ser
+    // registrado, pra nunca cobrar um total sem frete por engano.
+    let shippingCost = 0
+    let shippingLabel: string | null = null
+    if (subtotalAfterDiscount < freeShippingThreshold) {
+      const destinationCep = typeof shippingCep === 'string' ? shippingCep.replace(/\D/g, '') : ''
+      const serviceId = Number(shippingServiceId)
+      if (destinationCep.length !== 8 || !Number.isInteger(serviceId)) {
+        res.status(400).json({ error: 'Frete obrigatório para pedidos abaixo do frete grátis — informe shippingCep e shippingServiceId (ver GET /shipping/quote).' })
+        return
+      }
+      if (!melhorEnvioClient || !storeOriginCep) {
+        res.status(503).json({ error: 'Frete indisponível no momento — não foi possível fechar o pedido.' })
+        return
+      }
+      const resolvedPackages = resolveShippingPackages(requested, products, melhorEnvioDefaultPackage)
+      if ('error' in resolvedPackages) {
+        res.status(400).json({ error: resolvedPackages.error })
+        return
+      }
+      try {
+        const options = await melhorEnvioClient.calculate({ originCep: storeOriginCep, destinationCep, packages: resolvedPackages.packages })
+        const chosen = options.find((o) => o.id === serviceId)
+        if (!chosen) {
+          res.status(400).json({ error: 'Opção de frete inválida ou expirada — recalcule o frete e tente de novo.' })
+          return
+        }
+        shippingCost = chosen.price
+        shippingLabel = `${chosen.company} ${chosen.name}`
+      } catch (err) {
+        logger.error('Falha ao recalcular frete no fechamento do pedido', { message: (err as Error).message })
+        res.status(503).json({ error: 'Não foi possível confirmar o frete agora. Tente novamente em instantes.' })
+        return
+      }
+    }
+
+    const total = subtotalAfterDiscount + shippingCost
 
     let orderId: number
     try {
@@ -218,7 +273,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       level: 'info',
       category: 'order',
       message: `Novo pedido recebido pelo storefront: #${orderId}`,
-      detail: { id: orderId, customerEmail, subtotal, discount, total, couponCode: appliedCoupon },
+      detail: { id: orderId, customerEmail, subtotal, discount, shippingCost, shippingLabel, total, couponCode: appliedCoupon },
     })
 
     // Geração do pagamento: melhor esforço — uma falha aqui NUNCA deve fazer
@@ -273,7 +328,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
       }
     }
 
-    res.status(201).json({ success: true, orderId, subtotal, discount, total, couponApplied: appliedCoupon, pix, paymentUrl })
+    res.status(201).json({ success: true, orderId, subtotal, discount, shippingCost, shippingLabel, total, couponApplied: appliedCoupon, pix, paymentUrl })
 
     // E-mail de notificação: melhor esforço, disparado depois da resposta ao
     // cliente e nunca aguardado por ela — um SMTP lento ou fora do ar (visto
@@ -284,6 +339,7 @@ export function shopRouter({ productsStore, ordersStore, eventLog, mailer, abaca
         `Novo pedido — #${orderId}`,
         `Cliente: ${customerName} (${customerEmail}${customerPhone ? `, ${customerPhone}` : ''})\n` +
           `Subtotal: R$ ${subtotal.toLocaleString('pt-BR')}${appliedCoupon ? `\nCupão: ${appliedCoupon} (-R$ ${discount.toLocaleString('pt-BR')})` : ''}\n` +
+          (shippingLabel ? `Frete: ${shippingLabel} — R$ ${shippingCost.toLocaleString('pt-BR')} (CEP ${shippingCep})\n` : 'Frete: grátis\n') +
           `Total: R$ ${total.toLocaleString('pt-BR')}\n` +
           (pix ? `Cobrança Pix gerada (checkout ${pix.checkoutId})\n` : '') +
           (paymentUrl ? `Link de pagamento (cartão): ${paymentUrl}\n` : '') +
