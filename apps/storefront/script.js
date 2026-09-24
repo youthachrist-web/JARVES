@@ -1356,6 +1356,12 @@ document.getElementById('cart-shop-link')?.addEventListener('click', closeCart);
 // ══════════════════════
 let checkoutCustomer = null;
 let checkoutOrderId = null;
+// Preenchido ao escolher uma transportadora no passo 1 (ver
+// fetchShippingQuote/wireStep1) — { cep, serviceId, price, label } ou null
+// enquanto não escolhida. O preço aqui é só pra MOSTRAR: quem decide o
+// valor real cobrado é sempre o servidor, que recota na hora de criar o
+// pedido a partir de cep+serviceId (ver POST /orders em routes/shop.ts).
+let checkoutShipping = null;
 let selectedPaymentMethod = 'pix';
 let pixPollTimer = null;
 let pixCountdownTimer = null;
@@ -1384,6 +1390,10 @@ function maskCPF(v) {
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+function maskCEP(v) {
+  return v.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d{1,3})$/, '$1-$2');
 }
 
 function maskPhone(v) {
@@ -1424,8 +1434,11 @@ document.getElementById('checkout-btn')?.addEventListener('click', handleCheckou
 function renderCartSummaryHTML() {
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const discount = Math.round(subtotal * cartDiscount);
-  const total = subtotal - discount;
-  const shippingFree = total >= FREE_SHIPPING;
+  const subtotalAfterDiscount = subtotal - discount;
+  const shippingFree = subtotalAfterDiscount >= FREE_SHIPPING;
+  const shippingCost = shippingFree ? 0 : (checkoutShipping?.price ?? 0);
+  const total = subtotalAfterDiscount + shippingCost;
+  const shippingLabel = shippingFree ? 'Grátis' : (checkoutShipping ? `${formatBRL(checkoutShipping.price)}` : 'A calcular');
   return `
     <h3 class="cp-summary-title">Resumo do pedido</h3>
     <div class="cp-summary-items">
@@ -1442,10 +1455,18 @@ function renderCartSummaryHTML() {
     <div class="cp-summary-totals">
       <div class="cp-st-row"><span>Subtotal</span><span>${formatBRL(subtotal)}</span></div>
       ${cartDiscount > 0 ? `<div class="cp-st-row disc"><span>Desconto${appliedCouponCode ? ` (${appliedCouponCode})` : ''}</span><span>-${formatBRL(discount)}</span></div>` : ''}
-      <div class="cp-st-row"><span>Frete</span><span class="${shippingFree ? 'cp-free' : ''}">${shippingFree ? 'Grátis' : 'A calcular'}</span></div>
+      <div class="cp-st-row"><span>Frete${!shippingFree && checkoutShipping ? ` (${escapeHtml(checkoutShipping.label)})` : ''}</span><span class="${shippingFree ? 'cp-free' : ''}">${shippingLabel}</span></div>
       <div class="cp-st-row total"><span>Total</span><span>${formatBRL(total)}</span></div>
     </div>
     <div class="cp-secure-badge">${ICONS.check} Ambiente seguro — seus dados são protegidos do início ao fim</div>`;
+}
+
+// Reflete no resumo (coluna lateral do checkout) assim que o cliente
+// escolhe/troca a transportadora — sem isso o total ali ficava parado em
+// "A calcular" até a página inteira re-renderizar.
+function refreshCartSummary() {
+  const el = document.getElementById('cp-summary');
+  if (el) el.innerHTML = renderCartSummaryHTML();
 }
 
 function openCheckoutPage() {
@@ -1487,6 +1508,7 @@ function openCheckoutPage() {
 
   checkoutCustomer = null;
   checkoutOrderId = null;
+  checkoutShipping = null;
   selectedPaymentMethod = 'pix';
   fetchPaymentMethods(); // não bloqueia a abertura — a resposta chega bem antes do passo 2
   setCheckoutStep(1);
@@ -1517,8 +1539,19 @@ function setCheckoutStep(n) {
 }
 
 // ── Passo 1: Dados ──
+// O campo de CEP/frete só aparece quando o pedido não bate o frete grátis
+// (mesmo limite usado no resumo — ver FREE_SHIPPING e renderCartSummaryHTML).
+// Acima do limite, a transportadora é escolhida pela loja no despacho, não
+// pelo cliente aqui.
+function checkoutNeedsShipping() {
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const discount = Math.round(subtotal * cartDiscount);
+  return subtotal - discount < FREE_SHIPPING;
+}
+
 function renderStep1HTML() {
   const c = checkoutCustomer;
+  const needsShipping = checkoutNeedsShipping();
   return `
     <h2 class="cp-step-title">Seus dados</h2>
     <p class="cp-step-sub">Preencha para gerar o pagamento Pix — sem sair desta página.</p>
@@ -1529,9 +1562,65 @@ function renderStep1HTML() {
         <label class="cp-field"><span>CPF</span><input type="text" id="cp-cpf" value="${c?.cpf || ''}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required /></label>
         <label class="cp-field"><span>WhatsApp <em>(opcional)</em></span><input type="tel" id="cp-phone" value="${c?.phone || ''}" inputmode="numeric" maxlength="15" placeholder="(00) 00000-0000" autocomplete="tel" /></label>
       </div>
+      ${needsShipping ? `
+      <label class="cp-field"><span>CEP de entrega</span><input type="text" id="cp-cep" value="${checkoutShipping?.cep ? maskCEP(checkoutShipping.cep) : ''}" inputmode="numeric" maxlength="9" placeholder="00000-000" required /></label>
+      <div class="cp-shipping-options" id="cp-shipping-options"></div>
+      ` : ''}
       <p class="cp-field-err" id="cp-dados-err"></p>
       <button type="submit" class="cp-continue-btn">Continuar para pagamento →</button>
     </form>`;
+}
+
+async function fetchShippingQuote(cep) {
+  const box = document.getElementById('cp-shipping-options');
+  if (!box) return;
+  const apiBaseUrl = window.THYMOS_CONFIG?.apiBaseUrl;
+  if (!apiBaseUrl) {
+    box.innerHTML = `<p class="cp-shipping-err">Frete indisponível no momento.</p>`;
+    return;
+  }
+  box.innerHTML = `<div class="cp-shipping-loading"><span class="pix-spinner"></span> Calculando frete...</div>`;
+  try {
+    const res = await fetch(`${apiBaseUrl}/shipping/quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cep, items: cart.map(i => ({ productId: i.id, qty: i.qty })) }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+
+    if (data.free || !data.options?.length) {
+      box.innerHTML = data.free
+        ? `<p class="cp-shipping-err">Esse pedido já tem frete grátis — pode continuar.</p>`
+        : `<p class="cp-shipping-err">Nenhuma transportadora disponível para esse CEP.</p>`;
+      return;
+    }
+
+    box.innerHTML = data.options.map((opt, idx) => `
+      <label class="cp-shipping-opt${idx === 0 ? ' selected' : ''}">
+        <input type="radio" name="cp-shipping-opt" value="${opt.id}" ${idx === 0 ? 'checked' : ''} />
+        <span class="cp-so-name">${escapeHtml(opt.company)} ${escapeHtml(opt.name)}</span>
+        <span class="cp-so-time">${opt.deliveryTime ? `${opt.deliveryTime} dias úteis` : ''}</span>
+        <span class="cp-so-price">${formatBRL(opt.price)}</span>
+      </label>`).join('');
+
+    const selectOption = (opt) => {
+      checkoutShipping = { cep, serviceId: opt.id, price: opt.price, label: `${opt.company} ${opt.name}` };
+      refreshCartSummary();
+    };
+    selectOption(data.options[0]);
+
+    box.querySelectorAll('input[name="cp-shipping-opt"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        box.querySelectorAll('.cp-shipping-opt').forEach(el => el.classList.toggle('selected', el.contains(input) ? input.checked : false));
+        const opt = data.options.find(o => String(o.id) === input.value);
+        if (opt) selectOption(opt);
+      });
+    });
+  } catch (err) {
+    box.innerHTML = `<p class="cp-shipping-err">Não foi possível calcular o frete. Confira o CEP e tente de novo.</p>`;
+    console.warn('Falha ao cotar frete:', err.message);
+  }
 }
 
 function wireStep1() {
@@ -1539,6 +1628,16 @@ function wireStep1() {
   cpfInput?.addEventListener('input', () => { cpfInput.value = maskCPF(cpfInput.value); });
   const phoneInput = document.getElementById('cp-phone');
   phoneInput?.addEventListener('input', () => { phoneInput.value = maskPhone(phoneInput.value); });
+
+  const cepInput = document.getElementById('cp-cep');
+  cepInput?.addEventListener('input', () => { cepInput.value = maskCEP(cepInput.value); });
+  cepInput?.addEventListener('blur', () => {
+    const digits = cepInput.value.replace(/\D/g, '');
+    if (digits.length === 8) fetchShippingQuote(digits);
+  });
+  // CEP já vinha preenchido de uma escolha anterior (voltou do passo 2) —
+  // não precisa esperar o blur, já mostra as opções de novo.
+  if (checkoutShipping?.cep) fetchShippingQuote(checkoutShipping.cep);
 
   document.getElementById('cp-form-dados')?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1551,6 +1650,17 @@ function wireStep1() {
     if (!isValidCPF(cpf)) {
       if (err) err.textContent = 'CPF inválido — confira os números digitados.';
       return;
+    }
+    if (checkoutNeedsShipping()) {
+      const cepDigits = cepInput?.value.replace(/\D/g, '') || '';
+      if (cepDigits.length !== 8) {
+        if (err) err.textContent = 'Informe um CEP válido para calcular o frete.';
+        return;
+      }
+      if (!checkoutShipping || checkoutShipping.cep !== cepDigits) {
+        if (err) err.textContent = 'Escolha uma opção de frete antes de continuar.';
+        return;
+      }
     }
     if (err) err.textContent = '';
 
@@ -1625,6 +1735,8 @@ async function createOrder() {
         items: cart.map(i => ({ productId: i.id, qty: i.qty })),
         couponCode: appliedCouponCode || undefined,
         paymentMethod: selectedPaymentMethod,
+        shippingCep: checkoutShipping?.cep || undefined,
+        shippingServiceId: checkoutShipping?.serviceId || undefined,
       }),
     });
     const data = await res.json().catch(() => null);

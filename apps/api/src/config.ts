@@ -1,4 +1,5 @@
 import { loadNuvemshopEnv, type NuvemshopEnvConfig } from '@thymos/nuvemshop-sdk'
+import { MELHOR_ENVIO_PROD_URL, MELHOR_ENVIO_SANDBOX_URL } from './lib/melhorEnvio.js'
 import { logger } from './logger.js'
 
 export interface SmtpConfig {
@@ -40,6 +41,30 @@ export interface AppConfig {
   /** URL pública do storefront (apps/storefront) — para onde a AbacatePay
    * redireciona o cliente ao voltar ou concluir o pagamento. */
   storefrontUrl: string | null
+  /** Token de aplicação da Melhor Envio (gerado no painel, sem OAuth
+   * completo — ver docs.melhorenvio.com.br/docs/autenticacao-1). Sem ele,
+   * GET/POST /shipping/quote e o frete no checkout ficam indisponíveis. */
+  melhorEnvioToken: string | null
+  /** https://melhorenvio.com.br (produção) ou https://sandbox.melhorenvio.com.br
+   * (testes, sem gerar cobrança real de frete) — MELHOR_ENVIO_SANDBOX=true. */
+  melhorEnvioBaseUrl: string
+  /** Header User-Agent exigido pela Melhor Envio em todo request — formato
+   * "Nome da Aplicação (email de contato)". */
+  melhorEnvioUserAgent: string
+  /** CEP de origem dos envios (endereço da loja) — obrigatório pra cotar
+   * frete; sem ele, /shipping/quote responde 503 mesmo com token válido. */
+  storeOriginCep: string | null
+  /** Dimensões/peso padrão usados pra cotar frete, já que o catálogo ainda
+   * não guarda peso/dimensões por produto — uma peça de roupa dobrada cabe
+   * numa faixa parecida, então usamos um pacote único por item do pedido em
+   * vez de modelar cada SKU individualmente. Sobrescrevível via env se a
+   * embalagem real da loja for diferente. */
+  melhorEnvioDefaultPackage: { widthCm: number; heightCm: number; lengthCm: number; weightKg: number }
+  /** Mesmo valor de FREE_SHIPPING em apps/storefront/script.js — o
+   * storefront só usa isso pra decidir o que MOSTRAR ("Frete grátis" na
+   * barra de progresso); o servidor é quem decide de verdade se cobra frete
+   * ou não (ver routes/shop.ts#POST /orders). */
+  freeShippingThreshold: number
 }
 
 /**
@@ -117,6 +142,15 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   // /payment-methods, que o storefront consulta pra habilitar a aba Cartão).
   const abacatePayCardEnabled = env.ABACATEPAY_CARD_ENABLED === 'true'
 
+  const melhorEnvioToken = env.MELHOR_ENVIO_TOKEN || null
+  if (!melhorEnvioToken) {
+    logger.warn('MELHOR_ENVIO_TOKEN não configurada — cotação de frete e frete no checkout ficam indisponíveis.')
+  }
+  const storeOriginCep = env.STORE_ORIGIN_CEP || null
+  if (melhorEnvioToken && !storeOriginCep) {
+    logger.warn('STORE_ORIGIN_CEP não configurado — cotação de frete indisponível mesmo com MELHOR_ENVIO_TOKEN presente.')
+  }
+
   return {
     port: Number(env.PORT || 3000),
     corsAllowedOrigins,
@@ -131,5 +165,18 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     abacatePayCardEnabled,
     abacatePayWebhookSecret: env.ABACATEPAY_WEBHOOK_SECRET || null,
     storefrontUrl: env.STOREFRONT_URL || null,
+    melhorEnvioToken,
+    // MELHOR_ENVIO_BASE_URL tem prioridade — útil pra apontar pra um mock
+    // local em testes/desenvolvimento sem precisar de token real.
+    melhorEnvioBaseUrl: env.MELHOR_ENVIO_BASE_URL || (env.MELHOR_ENVIO_SANDBOX === 'true' ? MELHOR_ENVIO_SANDBOX_URL : MELHOR_ENVIO_PROD_URL),
+    melhorEnvioUserAgent: env.MELHOR_ENVIO_USER_AGENT || 'Thymos (contato@thymosfit.com.br)',
+    storeOriginCep,
+    melhorEnvioDefaultPackage: {
+      widthCm: Number(env.MELHOR_ENVIO_DEFAULT_WIDTH_CM || 25),
+      heightCm: Number(env.MELHOR_ENVIO_DEFAULT_HEIGHT_CM || 5),
+      lengthCm: Number(env.MELHOR_ENVIO_DEFAULT_LENGTH_CM || 20),
+      weightKg: Number(env.MELHOR_ENVIO_DEFAULT_WEIGHT_KG || 0.3),
+    },
+    freeShippingThreshold: Number(env.FREE_SHIPPING_THRESHOLD || 299),
   }
 }

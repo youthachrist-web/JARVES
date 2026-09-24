@@ -15,9 +15,11 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js'
 import type { Mailer } from './lib/mailer.js'
 import { createMailer } from './lib/mailer.js'
 import { shopRouter } from './routes/shop.js'
+import { shippingRouter } from './routes/shipping.js'
 import { SupabaseProductsStore, type ProductsStore } from './store/productsStore.js'
 import { SupabaseOrdersStore, type OrdersStore } from './store/ordersStore.js'
 import { createAbacatePayClient } from './lib/abacatepay.js'
+import { createMelhorEnvioClient } from './lib/melhorEnvio.js'
 import { logger } from './logger.js'
 
 export interface CreateAppDeps {
@@ -26,12 +28,13 @@ export interface CreateAppDeps {
   mailer?: Mailer
 }
 
-// /products e /orders (routes/shop.ts) fazem sua própria liberação de CORS
-// para qualquer origem — o storefront estático é publicado em domínios que
-// mudam (GitHub Pages, CDN, domínio próprio) e essas duas rotas não expõem
-// nada sensível nem exigem chave de admin. O middleware global de CORS
-// (restrito à allowlist de apps/admin) não deve interferir nelas.
-const PUBLIC_SHOP_PATHS = ['/products', '/orders']
+// /products, /orders e /shipping/quote (routes/shop.ts, routes/shipping.ts)
+// fazem sua própria liberação de CORS para qualquer origem — o storefront
+// estático é publicado em domínios que mudam (GitHub Pages, CDN, domínio
+// próprio) e essas rotas não expõem nada sensível nem exigem chave de
+// admin. O middleware global de CORS (restrito à allowlist de apps/admin)
+// não deve interferir nelas.
+const PUBLIC_SHOP_PATHS = ['/products', '/orders', '/shipping/quote']
 
 function corsMiddleware(allowedOrigins: string[]) {
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -84,6 +87,11 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
   // normalmente, só sem link automático (routes/shop.ts trata esse caso).
   const abacatePayClient = createAbacatePayClient(config.abacatePayApiKey)
 
+  // Cotação de frete (ver lib/melhorEnvio.ts). null sem MELHOR_ENVIO_TOKEN
+  // configurada — POST /shipping/quote e o frete no checkout (routes/shop.ts)
+  // respondem 503 nesse caso, nunca deixam passar um pedido sem cobrar frete.
+  const melhorEnvioClient = createMelhorEnvioClient(config.melhorEnvioToken, config.melhorEnvioBaseUrl, config.melhorEnvioUserAgent)
+
   app.disable('x-powered-by')
   // Headers de segurança de baixo risco, aplicados a toda resposta.
   // Deliberadamente NÃO define X-Frame-Options/CSP frame-ancestors aqui: a
@@ -124,6 +132,20 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
       abacatePayClient,
       storefrontUrl: config.storefrontUrl,
       cardEnabled: config.abacatePayCardEnabled,
+      melhorEnvioClient,
+      storeOriginCep: config.storeOriginCep,
+      freeShippingThreshold: config.freeShippingThreshold,
+      melhorEnvioDefaultPackage: config.melhorEnvioDefaultPackage,
+    })
+  )
+  app.use(
+    '/',
+    shippingRouter({
+      productsStore,
+      melhorEnvioClient,
+      storeOriginCep: config.storeOriginCep,
+      freeShippingThreshold: config.freeShippingThreshold,
+      defaultPackage: config.melhorEnvioDefaultPackage,
     })
   )
 
@@ -135,6 +157,7 @@ export function createApp(config: AppConfig, deps: CreateAppDeps = {}): Express 
     supabaseConfigured: !!config.supabaseUrl,
     smtpConfigured: !!config.smtp,
     abacatePayConfigured: !!abacatePayClient,
+    melhorEnvioConfigured: !!melhorEnvioClient,
   })
 
   return app

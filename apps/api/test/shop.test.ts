@@ -7,6 +7,7 @@ import type { Mailer } from '../src/lib/mailer.js'
 import type { ProductsStore, Product } from '../src/store/productsStore.js'
 import type { OrdersStore } from '../src/store/ordersStore.js'
 import type { AbacatePayClient, PixCharge } from '../src/lib/abacatepay.js'
+import type { MelhorEnvioClient, ShippingOption } from '../src/lib/melhorEnvio.js'
 
 function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -22,6 +23,12 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     abacatePayApiKey: null,
     abacatePayWebhookSecret: null,
     storefrontUrl: null,
+    melhorEnvioToken: null,
+    melhorEnvioBaseUrl: 'https://melhorenvio.com.br',
+    melhorEnvioUserAgent: 'Thymos (contato@thymosfit.com.br)',
+    storeOriginCep: null,
+    melhorEnvioDefaultPackage: { widthCm: 25, heightCm: 5, lengthCm: 20, weightKg: 0.3 },
+    freeShippingThreshold: 299,
     ...overrides,
   }
 }
@@ -113,10 +120,22 @@ function fakeAbacatePayClient(
   }
 }
 
+function fakeMelhorEnvioClient(options: ShippingOption[] = []): MelhorEnvioClient & { calculate: ReturnType<typeof vi.fn> } {
+  return { calculate: vi.fn().mockResolvedValue(options) }
+}
+
 function buildShopApp(
   productsStore: ProductsStore | null,
   ordersStore: OrdersStore | null,
-  opts: { mailer?: Mailer; abacatePayClient?: AbacatePayClient | null; storefrontUrl?: string | null; cardEnabled?: boolean } = {}
+  opts: {
+    mailer?: Mailer
+    abacatePayClient?: AbacatePayClient | null
+    storefrontUrl?: string | null
+    cardEnabled?: boolean
+    melhorEnvioClient?: MelhorEnvioClient | null
+    storeOriginCep?: string | null
+    freeShippingThreshold?: number
+  } = {}
 ) {
   const app = express()
   app.use(express.json())
@@ -132,6 +151,10 @@ function buildShopApp(
       abacatePayClient: opts.abacatePayClient ?? null,
       storefrontUrl: opts.storefrontUrl ?? null,
       cardEnabled: opts.cardEnabled ?? false,
+      melhorEnvioClient: opts.melhorEnvioClient ?? null,
+      storeOriginCep: opts.storeOriginCep ?? '88316400',
+      freeShippingThreshold: opts.freeShippingThreshold ?? 299,
+      melhorEnvioDefaultPackage: { widthCm: 25, heightCm: 5, lengthCm: 20, weightKg: 0.3 },
     })
   )
   return { app, eventLog, mailer: sendMock }
@@ -264,7 +287,18 @@ describe('shopRouter — /orders (integração)', () => {
     const res = await request(app).post('/orders').send(validBody)
 
     expect(res.status).toBe(201)
-    expect(res.body).toEqual({ success: true, orderId: 42, subtotal: 429, discount: 0, total: 429, couponApplied: null, pix: null, paymentUrl: null })
+    expect(res.body).toEqual({
+      success: true,
+      orderId: 42,
+      subtotal: 429,
+      discount: 0,
+      shippingCost: 0,
+      shippingLabel: null,
+      total: 429,
+      couponApplied: null,
+      pix: null,
+      paymentUrl: null,
+    })
     expect(mailer.send).toHaveBeenCalledTimes(1)
     expect(mailer.send.mock.calls[0][0]).toMatch(/42/)
 
@@ -415,6 +449,66 @@ describe('shopRouter — /orders (integração)', () => {
       const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore(), { cardEnabled: true })
       const res = await request(app).post('/orders').send({ ...validBody, paymentMethod: 'boleto' })
       expect(res.status).toBe(400)
+    })
+  })
+
+  describe('frete (pedido abaixo do limite de frete grátis)', () => {
+    const CHEAP_PRODUCT: Product = { ...SAMPLE_PRODUCT, id: 5, price: 100 }
+    const cheapBody = { ...validBody, items: [{ productId: 5, qty: 1 }] }
+
+    it('exige shippingCep e shippingServiceId quando o subtotal fica abaixo do limite', async () => {
+      const { app } = buildShopApp(fakeProductsStore([CHEAP_PRODUCT]), fakeOrdersStore())
+      const res = await request(app).post('/orders').send(cheapBody)
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/[Ff]rete/)
+    })
+
+    it('responde 503 quando a Melhor Envio não está configurada', async () => {
+      const { app } = buildShopApp(fakeProductsStore([CHEAP_PRODUCT]), fakeOrdersStore(), {
+        melhorEnvioClient: null,
+      })
+      const res = await request(app)
+        .post('/orders')
+        .send({ ...cheapBody, shippingCep: '01018-020', shippingServiceId: 1 })
+      expect(res.status).toBe(503)
+    })
+
+    it('rejeita shippingServiceId que não bate com nenhuma opção recotada (frete expirado)', async () => {
+      const melhorEnvioClient = fakeMelhorEnvioClient([{ id: 1, name: 'PAC', company: 'Correios', price: 25.5, deliveryTime: 9 }])
+      const { app } = buildShopApp(fakeProductsStore([CHEAP_PRODUCT]), fakeOrdersStore(), { melhorEnvioClient })
+      const res = await request(app)
+        .post('/orders')
+        .send({ ...cheapBody, shippingCep: '01018-020', shippingServiceId: 999 })
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/frete/i)
+    })
+
+    it('recota o frete no servidor (nunca confia num preço enviado pelo cliente) e soma ao total', async () => {
+      const orders = fakeOrdersStore(50)
+      const melhorEnvioClient = fakeMelhorEnvioClient([{ id: 1, name: 'PAC', company: 'Correios', price: 25.5, deliveryTime: 9 }])
+      const { app } = buildShopApp(fakeProductsStore([CHEAP_PRODUCT]), orders, { melhorEnvioClient })
+
+      const res = await request(app)
+        .post('/orders')
+        .send({ ...cheapBody, shippingCep: '01018-020', shippingServiceId: 1 })
+
+      expect(res.status).toBe(201)
+      expect(res.body.subtotal).toBe(100)
+      expect(res.body.shippingCost).toBe(25.5)
+      expect(res.body.shippingLabel).toBe('Correios PAC')
+      expect(res.body.total).toBe(125.5)
+      expect(melhorEnvioClient.calculate).toHaveBeenCalledWith(
+        expect.objectContaining({ originCep: '88316400', destinationCep: '01018020' })
+      )
+      expect(orders.create).toHaveBeenCalledWith(expect.objectContaining({ total: 125.5 }))
+    })
+
+    it('não exige frete quando o subtotal já bate o limite de frete grátis', async () => {
+      const { app } = buildShopApp(fakeProductsStore([SAMPLE_PRODUCT]), fakeOrdersStore(60))
+      const res = await request(app).post('/orders').send(validBody) // SAMPLE_PRODUCT = 429, acima do limite
+      expect(res.status).toBe(201)
+      expect(res.body.shippingCost).toBe(0)
+      expect(res.body.shippingLabel).toBeNull()
     })
   })
 })
